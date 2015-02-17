@@ -1,17 +1,20 @@
 {-# OPTIONS -Wall #-}
-{-# OPTIONS -fdefer-type-errors #-}
+{-- OPTIONS -fdefer-type-errors #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module NonCat where
 
 import Control.Arrow
+import Data.Type.Equality
 import GHC.TypeLits
 
 data Colour = R | Y | G
@@ -75,33 +78,65 @@ data Buffer n r a b where
   B4 :: r d e -> r c d -> r b c -> r a b -> Buffer 4 r a e
   B5 :: r e f -> r d e -> r c d -> r b c -> r a b -> Buffer 5 r a f
 
-data LBufferPair r a b where
-  LBP20 :: Buffer 2 r b c -> Buffer 0 (Pair r) a b -> LBufferPair r a c
-  LBP21 :: Buffer 2 r b c -> Buffer 1 (Pair r) a b -> LBufferPair r a c
-  LBP22 :: Buffer 2 r b c -> Buffer 2 (Pair r) a b -> LBufferPair r a c
-  LBP23 :: Buffer 2 r b c -> Buffer 3 (Pair r) a b -> LBufferPair r a c
-  LBP24 :: Buffer 2 r b c -> Buffer 4 (Pair r) a b -> LBufferPair r a c
-  LBP25 :: Buffer 2 r b c -> Buffer 5 (Pair r) a b -> LBufferPair r a c
-  LBP30 :: Buffer 3 r b c -> Buffer 0 (Pair r) a b -> LBufferPair r a c
-  LBP31 :: Buffer 3 r b c -> Buffer 1 (Pair r) a b -> LBufferPair r a c
-  LBP32 :: Buffer 3 r b c -> Buffer 2 (Pair r) a b -> LBufferPair r a c
-  LBP33 :: Buffer 3 r b c -> Buffer 3 (Pair r) a b -> LBufferPair r a c
-  LBP34 :: Buffer 3 r b c -> Buffer 4 (Pair r) a b -> LBufferPair r a c
-  LBP35 :: Buffer 3 r b c -> Buffer 5 (Pair r) a b -> LBufferPair r a c
+type family Up (n :: Nat) :: Nat where
+  Up 0  = 0
+  Up 1  = 1
+  Up 2  = 2
+  Up 3  = 3
+  Up 4  = 2
+  Up 5  = 3
+  Up 6  = 2
+  Up 7  = 3
+  Up 8  = 2
+  Up 9  = 3
+  Up 10 = 2
+  Up 11 = 3
+  Up 12 = 2
+  Up 13 = 3
 
-data RBufferPair r a b where
-  RBP20 :: Buffer 0 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP21 :: Buffer 1 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP22 :: Buffer 2 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP23 :: Buffer 3 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP24 :: Buffer 4 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP25 :: Buffer 5 (Pair r) b c -> Buffer 2 r a b -> RBufferPair r a c
-  RBP30 :: Buffer 0 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
-  RBP31 :: Buffer 1 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
-  RBP32 :: Buffer 2 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
-  RBP33 :: Buffer 3 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
-  RBP34 :: Buffer 4 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
-  RBP35 :: Buffer 5 (Pair r) b c -> Buffer 3 r a b -> RBufferPair r a c
+type family Down (n :: Nat) :: Nat where
+  Down 0  = 0
+  Down 1  = 0
+  Down 2  = 0
+  Down 3  = 0
+  Down 4  = 1
+  Down 5  = 1
+  Down 6  = 2
+  Down 7  = 2
+  Down 8  = 3
+  Down 9  = 3
+  Down 10 = 4
+  Down 11 = 4
+  Down 12 = 5
+  Down 13 = 5
+
+data LBufferPair (u :: Nat) (d :: Nat) r a b where
+  LBP20 :: Buffer 2 r b c -> Buffer 0 (Pair r) a b -> LBufferPair 2 0 r a c
+  LBP21 :: Buffer 2 r b c -> Buffer 1 (Pair r) a b -> LBufferPair 2 1 r a c
+  LBP22 :: Buffer 2 r b c -> Buffer 2 (Pair r) a b -> LBufferPair 2 2 r a c
+  LBP23 :: Buffer 2 r b c -> Buffer 3 (Pair r) a b -> LBufferPair 2 3 r a c
+  LBP24 :: Buffer 2 r b c -> Buffer 4 (Pair r) a b -> LBufferPair 2 4 r a c
+  LBP25 :: Buffer 2 r b c -> Buffer 5 (Pair r) a b -> LBufferPair 2 5 r a c
+  LBP30 :: Buffer 3 r b c -> Buffer 0 (Pair r) a b -> LBufferPair 3 0 r a c
+  LBP31 :: Buffer 3 r b c -> Buffer 1 (Pair r) a b -> LBufferPair 3 1 r a c
+  LBP32 :: Buffer 3 r b c -> Buffer 2 (Pair r) a b -> LBufferPair 3 2 r a c
+  LBP33 :: Buffer 3 r b c -> Buffer 3 (Pair r) a b -> LBufferPair 3 3 r a c
+  LBP34 :: Buffer 3 r b c -> Buffer 4 (Pair r) a b -> LBufferPair 3 4 r a c
+  LBP35 :: Buffer 3 r b c -> Buffer 5 (Pair r) a b -> LBufferPair 3 5 r a c
+
+data RBufferPair (u :: Nat) (d :: Nat) r a b where
+  RBP20 :: Buffer 0 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 0 r a c
+  RBP21 :: Buffer 1 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 1 r a c
+  RBP22 :: Buffer 2 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 2 r a c
+  RBP23 :: Buffer 3 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 3 r a c
+  RBP24 :: Buffer 4 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 4 r a c
+  RBP25 :: Buffer 5 (Pair r) b c -> Buffer 2 r a b -> RBufferPair 2 5 r a c
+  RBP30 :: Buffer 0 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 0 r a c
+  RBP31 :: Buffer 1 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 1 r a c
+  RBP32 :: Buffer 2 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 2 r a c
+  RBP33 :: Buffer 3 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 3 r a c
+  RBP34 :: Buffer 4 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 4 r a c
+  RBP35 :: Buffer 5 (Pair r) b c -> Buffer 3 r a b -> RBufferPair 3 5 r a c
 
 data Genus a where
   Closed :: Genus a
@@ -191,7 +226,7 @@ r11 a b c d e f g h i j k = (B4 (P a b) (P c d) (P e f) (P g h), B3 i j k)
 r12 a b c d e f g h i j k l = (B5 (P a b) (P c d) (P e f) (P g h) (P i j), B2 k l)
 r13 a b c d e f g h i j k l m = (B5 (P a b) (P c d) (P e f) (P g h) (P i j), B3 k l m)
 
-lb :: Buffer n r b c -> Buffer m (Pair r) a b -> LBufferPair r a c
+lb :: (k ~ (n + 2 * m)) => Buffer n r b c -> Buffer m (Pair r) a b -> LBufferPair (Up k) (Down k) r a c
 lb B0 (B1 (P f g))                                     = uncurry LBP20 $ l2 f g
 lb B0 (B2 (P f g) (P h i))                             = uncurry LBP21 $ l4 f g h i
 lb B0 (B3 (P f g) (P h i) (P j k))                     = uncurry LBP22 $ l6 f g h i j k
@@ -218,7 +253,7 @@ lb (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP34 $ l11 a b
 lb (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP35 $ l13 a b c d e f g h i j k l m
 lb _ _ = undefined
 
-rb :: Buffer n (Pair r) b c -> Buffer m r a b -> RBufferPair r a c
+rb :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBufferPair (Up k) (Down k) r a c
 rb (B1 (P n o)) B0                                     = uncurry RBP20 $ r2 n o
 rb (B2 (P n o) (P p q)) B0                             = uncurry RBP21 $ r4 n o p q
 rb (B3 (P n o) (P p q) (P r s)) B0                     = uncurry RBP22 $ r6 n o p q r s
@@ -245,7 +280,7 @@ rb (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP34 $ r11 n o
 rb (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP35 $ r13 n o p q r s t u v w x y z
 rb _ _ = undefined
 
-go :: (Combine G rem, Combine Y rem, Combine R rem) => LBufferPair r c d -> RBufferPair r a b -> rem (Pair (Pair r)) b c -> Stack Full G r a d
+go :: (Combine (MinO ld rd) rem) => LBufferPair lu ld r c d -> RBufferPair ru rd r a b -> rem (Pair (Pair r)) b c -> Stack Full G r a d
 go (LBP20 a b) (RBP20 c d) = combine (NO a d) (NO b c)
 go (LBP20 a b) (RBP21 c d) = combine (NO a d) (NO b c)
 go (LBP20 a b) (RBP22 c d) = combine (NO a d) (NO b c)
@@ -394,8 +429,13 @@ go (LBP35 a b) (RBP35 c d) = combine (NO a d) (NO b c)
 class Combine c2 rem where
   combine :: Node G (Open (Pair r) c d) r a b -> Node c2 (Open (Pair (Pair r)) e f) (Pair r) c d -> rem (Pair (Pair r)) e f-> Stack Full G r a b
 
-data YG r a b where
-  YG :: SubStack Y (Open t c d) r a b -> Stack Full G t c d -> YG r a b
+data Remainder r a b where
+  YG :: SubStack Y (Open t c d) r a b -> Stack Full G t c d -> Remainder r a b
+  YR :: SubStack Y (Open t c d) r a b -> Stack Semi R t c d -> Remainder r a b
+  None :: Remainder r a a
+
+data CL (r :: * -> * -> *) a b where
+  CL :: CL r a a
 
 instance Combine G (SubStack Y Closed) where
   combine n1 n2 ss = SGG (SS1 n1) (SG (SSC n2 ss))
@@ -415,24 +455,62 @@ instance Combine Y (Stack Full G) where
 instance Combine R (Stack Full G) where
   combine n1 n2 s = SGR (SS1 n1) (SRG (SS1 n2) s)
 
-instance Combine G YG where
+instance Combine G Remainder where
   combine n1 n2 (YG ss s) = SGG (SS1 n1) $ SGG (SSC n2 ss) $ s
+  combine n1 n2 (YR ss s) = SGG (SS1 n1) $ SGR (SSC n2 ss) $ s
+--  combine (NO b1 b2) (NO B0 B0) None = SGG (SS1 n1) $ SGR (SSC n2 ss) $ s
 
-instance Combine Y YG where
+instance Combine Y Remainder where
   combine n1 n2 (YG ss s) = SGG (SSC n1 (SSC n2 ss)) $ s
+  combine n1 n2 (YR ss s) = SGR (SSC n1 (SSC n2 ss)) $ s
 
-instance Combine R YG where
+instance Combine R Remainder where
   combine n1 n2 (YG ss s) = SGR (SS1 n1) $ SRG (SSC n2 ss) $ s
+  combine _ _ (YR _ _) = error "Impossible"
+
+{-
+instance Combine G CL where
+  combine n1 (NO c1 c2) CL = SGG (SS1 n1) $ SG (SS1 (NC c1 c2))
+
+instance Combine Y CL where
+  combine n1 (NO c1 c2) CL = SG (SSC n1 (SS1 (NC c1 c2)))
+
+instance Combine R CL where
+  combine n1 (NO c1 c2) CL = SGR (SS1 n1) $ SR (SS1 (NC c1 c2))
+-}
+pattern B0' <- B0
+pattern B1' <- B1 _
+pattern B2' <- B2 _ _
+pattern B3' <- B3 _ _ _
+pattern B4' <- B4 _ _ _ _
+pattern B5' <- B5 _ _ _ _ _
 
 instance Reg Semi R G r a b where
+--  regular (SR (SSC (NO a b) (SS1 (NC c d)))) = go (lb a c) (rb d b) CL
   regular (SR (SSC (NO a b) (SSC (NO c d) ss))) = go (lb a c) (rb d b) ss
-  regular (SRG (SS1 (NO a b)) (SG (SSC (NO c d) ss))) = go (lb a c) (rb d b) ss
-  regular (SRG (SS1 (NO a b)) (SGR (SS1 (NO c d)) s)) = go (lb a c) (rb d b) s
+--  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B1' d@B1') ss))) = go (lb a c) (rb d b) ss
+--  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B1' d@B2') ss))) = go (lb a c) (rb d b) ss
+{-  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B1' d@B3') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B1' d@B4') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B2' d@B1') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B2' d@B4') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B3' d@B1') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B3' d@B4') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B4' d@B1') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B4' d@B2') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B4' d@B3') ss))) = go (lb a c) (rb d b) ss
+  regular (SR (SSC (NO a@B0' b@B0') (SSC (NO c@B4' d@B4') ss))) = go (lb a c) (rb d b) ss-}
+
+--  regular (SR (SSC (NO a b) (SSC (NO c d) ss))) = go (lb a c) (rb d b) ss
+--  regular (SRG (SS1 (NO a b)) (SG (SS1 (NC c d)))) = go (lb a c) (rb d b) CL
+{-  regular (SRG (SS1 (NO a b)) (SG (SSC (NO c d) ss))) = go (lb a c) (rb d b) ss
+--  regular (SRG (SS1 (NO a b)) (SGR (SS1 (NO c d)) s)) = go (lb a c) (rb d b) s
   regular (SRG (SS1 (NO a b)) (SGG (SS1 (NO c d)) s)) = go (lb a c) (rb d b) s
-  regular (SRG (SS1 (NO a b)) (SGR (SSC (NO c d) ss) s)) = go (lb a c) (rb d b) (YG ss s)
+--  regular (SRG (SS1 (NO a b)) (SGR (SSC (NO c d) ss) s)) = go (lb a c) (rb d b) (YG ss s)
   regular (SRG (SS1 (NO a b)) (SGG (SSC (NO c d) ss) s)) = go (lb a c) (rb d b) (YG ss s)
   regular (SRG (SSC (NO a b) (SS1 (NO c d))) s) = go (lb a c) (rb d b) s
-  regular (SRG (SSC (NO a b) (SSC (NO c d) ss)) s) = go (lb a c) (rb d b) (YG ss s)
+  regular (SRG (SSC (NO a b) (SSC (NO c d) ss)) s) = go (lb a c) (rb d b) (YG ss s)-}
+{-
   regular (SR (SS1 (NC B0 B0))) = undefined
   regular (SR (SS1 (NC B0 (B1 _)))) = undefined
   regular (SR (SS1 (NC B0 (B2 _ _)))) = undefined
@@ -457,7 +535,8 @@ instance Reg Semi R G r a b where
   regular (SR (SS1 (NC (B4 _ _ _ _) (B1 _)))) = undefined
   regular (SR (SS1 (NC (B4 _ _ _ _) (B2 _ _)))) = undefined
   regular (SR (SS1 (NC (B4 _ _ _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B4 _ _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) (B4 _ _ _ _)))) = undefined-}
+  {-
   regular (SR (SSC (NO (B1 _) (B1 _)) _)) = undefined
   regular (SR (SSC (NO (B1 _) (B2 _ _)) _)) = undefined
   regular (SR (SSC (NO (B1 _) (B3 _ _ _)) _)) = undefined
@@ -485,7 +564,8 @@ instance Reg Semi R G r a b where
   regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B3 _ _ _))))) = undefined
   regular (SR (SSC (NO _ _) (SS1 (NC _ (B5 _ _ _ _ _))))) = undefined
   regular (SR (SSC (NO _ _) (SS1 (NC (B5 _ _ _ _ _) _)))) = undefined
-
+-}
+{-
   regular (SR (SS1 (NC (B5 a b c d e) B0))) = go5 a b c d e
   regular (SR (SS1 (NC B0 (B5 a b c d e)))) = go5 a b c d e
   regular (SR (SS1 (NC (B5 a b c d e) (B1 f)))) = go6 a b c d e f
@@ -497,7 +577,8 @@ instance Reg Semi R G r a b where
   regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B2 a b) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B1 a) (B5 f g h i j)))) = SG (SS1 (NC (B3 a f g) (B3 h i j)))
-
+-}
+{-
   regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
   regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) B0)))) = go2 a b
   regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
@@ -837,3 +918,4 @@ instance Reg Semi R G r a b where
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y a b c d e f g h i j k l m n o p q r s t u
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
+-}

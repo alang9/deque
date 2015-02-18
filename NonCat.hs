@@ -8,6 +8,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -76,6 +77,14 @@ data Buffer n r a b where
   B4 :: r d e -> r c d -> r b c -> r a b -> Buffer 4 r a e
   B5 :: r e f -> r d e -> r c d -> r b c -> r a b -> Buffer 5 r a f
 
+instance Show (Buffer n r a b) where
+  show B0' = "B0"
+  show B1' = "B1"
+  show B2' = "B2"
+  show B3' = "B3"
+  show B4' = "B4"
+  show B5' = "B5"
+
 type family Up (n :: Nat) :: Nat where
   Up 0  = 0
   Up 1  = 1
@@ -125,9 +134,13 @@ data Node c (t :: Genus *) r a b where
   NO :: Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
   NC :: Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) (Closed (Pair r) b b) r a c
 
+deriving instance Show (Node c t r a b)
+
 data SubStack c (t :: Genus *) r a b where
   SS1 :: Node c1 t r a b -> SubStack c1 t r a b
   SSC :: Node c1 (Open (Pair r) a b) r c d -> SubStack Y t (Pair r) a b -> SubStack c1 t r c d
+
+deriving instance Show (SubStack c t r a b)
 
 data Regular = Full | Semi
 
@@ -141,13 +154,23 @@ data Stack reg c1 r a b where
   SGR :: SubStack G (Open t c d) r a b -> Stack Semi R t c d -> Stack Full G r a b
   SGG :: SubStack G (Open t c d) r a b -> Stack Full G t c d -> Stack Full G r a b
 
-class Reg reg c1 c2 r a b where
-  regular :: Stack reg c1 r a b -> Stack Full c2 r a b
+deriving instance Show (Stack c t r a b)
 
-instance Reg Full c1 c1 r a b where
+class Reg reg c1 r a b where
+  regular :: Stack reg c1 r a b -> Stack Full (RegCol c1) r a b
+
+type family RegCol (c :: Colour) :: Colour where
+  RegCol R = G
+  RegCol Y = Y
+  RegCol G = G
+
+instance Reg Full G r a b where
   regular = id
 
-instance Reg Semi Y Y r a b where
+instance Reg Full Y r a b where
+  regular = id
+
+instance Reg Semi Y r a b where
   regular (SYR foo bar) = SYG foo (regular bar)
 
 go2 a b = SG (SS1 (NC (B2 a b) B0))
@@ -214,18 +237,22 @@ lb' (B1 a) (B1 (P f g))                                 = uncurry LBP $ l3 a f g
 lb' (B1 a) (B2 (P f g) (P h i))                         = uncurry LBP $ l5 a f g h i
 lb' (B1 a) (B3 (P f g) (P h i) (P j k))                 = uncurry LBP $ l7 a f g h i j k
 lb' (B1 a) (B4 (P f g) (P h i) (P j k) (P l m))         = uncurry LBP $ l9 a f g h i j k l m
+lb' (B2 a b) B0                                         = uncurry LBP $ l2 a b
 lb' (B2 a b) (B1 (P f g))                               = uncurry LBP $ l4 a b f g
 lb' (B2 a b) (B2 (P f g) (P h i))                       = uncurry LBP $ l6 a b f g h i
 lb' (B2 a b) (B3 (P f g) (P h i) (P j k))               = uncurry LBP $ l8 a b f g h i j k
 lb' (B2 a b) (B4 (P f g) (P h i) (P j k) (P l m))       = uncurry LBP $ l10 a b f g h i j k l m
+lb' (B3 a b c) B0                                       = uncurry LBP $ l3 a b c
 lb' (B3 a b c) (B1 (P f g))                             = uncurry LBP $ l5 a b c f g
 lb' (B3 a b c) (B2 (P f g) (P h i))                     = uncurry LBP $ l7 a b c f g h i
 lb' (B3 a b c) (B3 (P f g) (P h i) (P j k))             = uncurry LBP $ l9 a b c f g h i j k
 lb' (B3 a b c) (B4 (P f g) (P h i) (P j k) (P l m))     = uncurry LBP $ l11 a b c f g h i j k l m
+lb' (B4 a b c d) B0                                     = uncurry LBP $ l4 a b c d
 lb' (B4 a b c d) (B1 (P f g))                           = uncurry LBP $ l6 a b c d f g
 lb' (B4 a b c d) (B2 (P f g) (P h i))                   = uncurry LBP $ l8 a b c d f g h i
 lb' (B4 a b c d) (B3 (P f g) (P h i) (P j k))           = uncurry LBP $ l10 a b c d f g h i j k
 lb' (B4 a b c d) (B4 (P f g) (P h i) (P j k) (P l m))   = uncurry LBP $ l12 a b c d f g h i j k l m
+lb' (B5 a b c d e) B0                                   = uncurry LBP $ l5 a b c d e
 lb' (B5 a b c d e) (B1 (P f g))                         = uncurry LBP $ l7 a b c d e f g
 lb' (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c d e f g h i
 lb' (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
@@ -259,8 +286,29 @@ rb' (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o 
 rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
 rb' _ _ = undefined
 
-class Combine c2 t rem where
-  combine :: Node G (Open (Pair r) c d) r a b -> Node c2 (t (Pair (Pair r)) e f) (Pair r) c d -> rem (Pair (Pair r)) e f-> Stack Full G r a b
+class Combine c t rem where
+  type Regularity c t rem :: Regular
+  type Col c t rem :: Colour
+  combine :: Node c (t (Pair r) e f) r a b -> rem (Pair r) e f-> Stack (Regularity c t rem) (Col c t rem) r a b
+
+instance Combine G Open (Stack Full G) where
+  type Regularity G Open (Stack Full G) = Full
+  type Col G Open (Stack Full G) = G
+  combine n1 ss = SGG (SS1 n1) ss
+
+instance Combine Y Open (Stack Full G) where
+  type Regularity Y Open (Stack Full G) = Full
+  type Col Y Open (Stack Full G) = Y
+  combine n1 ss = SYG (SS1 n1) ss
+
+instance Combine R Open (Stack Full G) where
+  type Regularity R Open (Stack Full G) = Semi
+  type Col R Open (Stack Full G) = R
+  combine n1 ss = SRG (SS1 n1) ss
+
+
+class Combine2 c2 t rem where
+  combine2 :: Node G (Open (Pair r) c d) r a b -> Node c2 (t (Pair (Pair r)) e f) (Pair r) c d -> rem (Pair (Pair r)) e f-> Stack Full G r a b
 
 data Remainder r a b where
   YG :: SubStack Y (Open t c d) r a b -> Stack Full G t c d -> Remainder r a b
@@ -269,54 +317,54 @@ data Remainder r a b where
 data CL (r :: * -> * -> *) a b where
   CL :: CL r a a
 
-instance Combine G Open (SubStack Y (Closed t d d)) where
-  combine n1 n2 ss = SGG (SS1 n1) (SG (SSC n2 ss))
+instance Combine2 G Open (SubStack Y (Closed t d d)) where
+  combine2 n1 n2 ss = SGG (SS1 n1) (SG (SSC n2 ss))
 
-instance Combine Y Open (SubStack Y (Closed t d d)) where
-  combine n1 n2 ss = SG (SSC n1 (SSC n2 ss))
+instance Combine2 Y Open (SubStack Y (Closed t d d)) where
+  combine2 n1 n2 ss = SG (SSC n1 (SSC n2 ss))
 
-instance Combine R Open (SubStack Y (Closed t d d)) where
-  combine n1 n2 ss = SGR (SS1 n1) (SR (SSC n2 ss))
+instance Combine2 R Open (SubStack Y (Closed t d d)) where
+  combine2 n1 n2 ss = SGR (SS1 n1) (SR (SSC n2 ss))
 
-instance Combine G Open (Stack Full G) where
-  combine n1 n2 s = SGG (SS1 n1) (SGG (SS1 n2) s)
+instance Combine2 G Open (Stack Full G) where
+  combine2 n1 n2 s = SGG (SS1 n1) (SGG (SS1 n2) s)
 
-instance Combine Y Open (Stack Full G) where
-  combine n1 n2 s = SGG (SSC n1 (SS1 n2)) s
+instance Combine2 Y Open (Stack Full G) where
+  combine2 n1 n2 s = SGG (SSC n1 (SS1 n2)) s
 
-instance Combine R Open (Stack Full G) where
-  combine n1 n2 s = SGR (SS1 n1) (SRG (SS1 n2) s)
+instance Combine2 R Open (Stack Full G) where
+  combine2 n1 n2 s = SGR (SS1 n1) (SRG (SS1 n2) s)
 
-instance Combine G Open (Stack Semi R) where
-  combine n1 n2 s = SGG (SS1 n1) (SGR (SS1 n2) s)
+instance Combine2 G Open (Stack Semi R) where
+  combine2 n1 n2 s = SGG (SS1 n1) (SGR (SS1 n2) s)
 
-instance Combine Y Open (Stack Semi R) where
-  combine n1 n2 s = SGR (SSC n1 (SS1 n2)) s
+instance Combine2 Y Open (Stack Semi R) where
+  combine2 n1 n2 s = SGR (SSC n1 (SS1 n2)) s
 
-instance Combine G Open Remainder where
-  combine n1 n2 (YG ss s) = SGG (SS1 n1) $ SGG (SSC n2 ss) $ s
-  combine n1 n2 (YR ss s) = SGG (SS1 n1) $ SGR (SSC n2 ss) $ s
+instance Combine2 G Open Remainder where
+  combine2 n1 n2 (YG ss s) = SGG (SS1 n1) $ SGG (SSC n2 ss) $ s
+  combine2 n1 n2 (YR ss s) = SGG (SS1 n1) $ SGR (SSC n2 ss) $ s
 
-instance Combine Y Open Remainder where
-  combine n1 n2 (YG ss s) = SGG (SSC n1 (SSC n2 ss)) $ s
-  combine n1 n2 (YR ss s) = SGR (SSC n1 (SSC n2 ss)) $ s
+instance Combine2 Y Open Remainder where
+  combine2 n1 n2 (YG ss s) = SGG (SSC n1 (SSC n2 ss)) $ s
+  combine2 n1 n2 (YR ss s) = SGR (SSC n1 (SSC n2 ss)) $ s
 
-instance Combine R Open Remainder where
-  combine n1 n2 (YG ss s) = SGR (SS1 n1) $ SRG (SSC n2 ss) $ s
-  combine _ _ (YR _ _) = error "Impossible"
+instance Combine2 R Open Remainder where
+  combine2 n1 n2 (YG ss s) = SGR (SS1 n1) $ SRG (SSC n2 ss) $ s
+  combine2 _ _ (YR _ _) = error "Impossible"
 
-instance Combine G Closed CL where
-  combine (NO a@B2' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
-  combine (NO a@B2' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
-  combine (NO a@B3' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
-  combine (NO a@B3' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
-  combine n1 n2 CL = SGG (SS1 n1) $ SG (SS1 n2)
+instance Combine2 G Closed CL where
+  combine2 (NO a@B2' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
+  combine2 (NO a@B2' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
+  combine2 (NO a@B3' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
+  combine2 (NO a@B3' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
+  combine2 n1 n2 CL = SGG (SS1 n1) $ SG (SS1 n2)
 
-instance Combine Y Closed CL where
-  combine n1 n2 CL = SG (SSC n1 (SS1 n2))
+instance Combine2 Y Closed CL where
+  combine2 n1 n2 CL = SG (SSC n1 (SS1 n2))
 
-instance Combine R Closed CL where
-  combine n1 n2 CL = SGR (SS1 n1) $ SR (SS1 n2)
+instance Combine2 R Closed CL where
+  combine2 n1 n2 CL = SGR (SS1 n1) $ SR (SS1 n2)
 
 
 pattern B0' <- B0
@@ -334,64 +382,574 @@ data GorYorR t r a b where
   GG3 :: Node G (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorYorR t r a b
   GY3 :: Node G (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
   GR3 :: Node G (Open (Pair r) c d) r a b -> Node R t (Pair r) c d -> GorYorR t r a b
+  G3 :: Node G (Closed (Pair r) c c) r a b -> GorYorR (Closed (Pair r) c c) r a b
+  Y3 :: Node Y (Closed (Pair r) c c) r a b -> GorYorR (Closed (Pair r) c c) r a b
 
 data Deque r a b where
   D :: Stack Full c r a b -> Deque r a b
 
-cons :: r b c -> Deque r a b -> Deque r a c
-cons a (D (SG (SSC (NO (B2 b c) e) f))) = D $ regular $ SG (SSC (NO (B3 a b c) e) f)
+deriving instance Show (Deque r a b)
 
-instance Reg Semi R G r a b where
+pre :: (n <= 4) => r b c -> Buffer n r a b -> Buffer (n + 1) r a c
+pre a B0 = B1 a
+pre a (B1 b) = B2 a b
+pre a (B2 b c) = B3 a b c
+pre a (B3 b c d) = B4 a b c d
+pre a (B4 b c d e) = B5 a b c d e
+
+data Foo a b where
+  F :: Int -> Foo () ()
+
+empty :: Deque r a a
+empty = D $ SG (SS1 (NC B0 B0))
+
+cons :: r b c -> Deque r a b -> Deque r a c
+
+cons a (D (SG (SSC (NO b@B2' e@B2') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B2' e@B3') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B3' e@B2') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B3' e@B3') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SG (SS1 (NC b@B0' e@B0'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B0'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B2'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B3'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B0'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B2'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B3'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B0' e@B2'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B0' e@B3'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SSC (NO b@B1' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B2') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B3') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B2' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B2' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B3' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B3' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B1') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B2') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B3') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B4') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SS1 (NC b@B1' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B2'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B3'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B2' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B2' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B3' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B3' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B1'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B2'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B3'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B4'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B0' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B0' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B0'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B0'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SGG (SSC (NO b@B2' e@B2') f) g)) = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B2' e@B3') f) g)) = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B3' e@B2') f) g)) = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B3' e@B3') f) g)) = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SS1 (NO b@B2' e@B2')) g))   = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B2' e@B3')) g))   = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B3' e@B2')) g))   = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B3' e@B3')) g))   = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SSC (NO b@B2' e@B2') f) g)) = D $ regular $ SGR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B2' e@B3') f) g)) = D $ regular $ SGR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B3' e@B2') f) g)) = D $ regular $ SYR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B3' e@B3') f) g)) = D $ regular $ SYR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SS1 (NO b@B2' e@B2')) g))   = D $ regular $ SGR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B2' e@B3')) g))   = D $ regular $ SGR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B3' e@B2')) g))   = D $ regular $ SYR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B3' e@B3')) g))   = D $ regular $ SYR (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SSC (NO b@B1' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B2') f) g))    = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B3') f) g))    = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B2' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B2' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B3' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B3' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B1') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B2') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B3') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B4') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SS1 (NO b@B1' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B2')) g))      = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B3')) g))      = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B2' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B2' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B3' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B3' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B1')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B2')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B3')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B4')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
+
+
+instance Reg Semi R r a b where
   regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
   regular (SR (SSC (NO B0 (B1 c)) (SS1 (NC B0 (B1 (P a b)))))) = go3 a b c
 {-  regular (SR (SSC (NO B0 c) (SS1 (NC B0 (B1 (P a b)))))) =
     case fixRG (NO (B2 a b) c) (NC B0 B0) of
-      GG2 a b -> combine a b CL
-      GY2 a b -> combine a b CL-}
+      GG2 a b -> combine2 a b CL
+      GY2 a b -> combine2 a b CL-}
   regular (SR (SSC n1@(NO _ _) (SS1 n2@(NC _ _)))) =
     case fixRY n1 n2 of
-      GG3 a b -> combine a b CL
-      GY3 a b -> combine a b CL
-      GR3 a b -> combine a b CL
+      GG3 a b -> combine2 a b CL
+      GY3 a b -> combine2 a b CL
+      GR3 a b -> combine2 a b CL
   regular (SRG (SS1 n1@(NO _ _)) (SG (SS1 n2@(NC _ _)))) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b CL
-      GY2 a b -> combine a b CL
+      GG2 a b -> combine2 a b CL
+      GY2 a b -> combine2 a b CL
   regular (SR (SSC n1 (SSC n2 ss))) =
     case fixRY n1 n2 of
-      GG3 a b -> combine a b ss
-      GY3 a b -> combine a b ss
-      GR3 a b -> combine a b ss
+      GG3 a b -> combine2 a b ss
+      GY3 a b -> combine2 a b ss
+      GR3 a b -> combine2 a b ss
   regular (SRG (SS1 n1@(NO _ _)) (SG (SSC n2@(NO _ _) ss))) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b ss
-      GY2 a b -> combine a b ss
+      GG2 a b -> combine2 a b ss
+      GY2 a b -> combine2 a b ss
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b s
-      GY2 a b -> combine a b s
+      GG2 a b -> combine2 a b s
+      GY2 a b -> combine2 a b s
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b s
-      GY2 a b -> combine a b s
+      GG2 a b -> combine2 a b s
+      GY2 a b -> combine2 a b s
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b (YR ss s)
-      GY2 a b -> combine a b (YR ss s)
+      GG2 a b -> combine2 a b (YR ss s)
+      GY2 a b -> combine2 a b (YR ss s)
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine a b (YG ss s)
-      GY2 a b -> combine a b (YG ss s)
+      GG2 a b -> combine2 a b (YG ss s)
+      GY2 a b -> combine2 a b (YG ss s)
   regular (SRG (SSC n1@(NO _ _) (SS1 n2@(NO _ _))) s) =
     case fixRY n1 n2 of
-      GG3 a b -> combine a b s
-      GY3 a b -> combine a b s
-      GR3 a b -> combine a b s
+      GG3 a b -> combine2 a b s
+      GY3 a b -> combine2 a b s
+      GR3 a b -> combine2 a b s
   regular (SRG (SSC n1@(NO _ _) (SSC n2@(NO _ _) ss)) s) =
     case fixRY n1 n2 of
-      GG3 a b -> combine a b (YG ss s)
-      GY3 a b -> combine a b (YG ss s)
-      GR3 a b -> combine a b (YG ss s)
+      GG3 a b -> combine2 a b (YG ss s)
+      GY3 a b -> combine2 a b (YG ss s)
+      GR3 a b -> combine2 a b (YG ss s)
+
+{-
+  regular (SR (SS1 (NC B0 B0))) = undefined
+  regular (SR (SS1 (NC B0 (B1 _)))) = undefined
+  regular (SR (SS1 (NC B0 (B2 _ _)))) = undefined
+  regular (SR (SS1 (NC B0 (B3 _ _ _)))) = undefined
+  regular (SR (SS1 (NC B0 (B4 _ _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B1 _) B0))) = undefined
+  regular (SR (SS1 (NC (B1 _) (B1 _)))) = undefined
+  regular (SR (SS1 (NC (B1 _) (B2 _ _)))) = undefined
+  regular (SR (SS1 (NC (B1 _) (B3 _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B1 _) (B4 _ _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B2 _ _) B0))) = undefined
+  regular (SR (SS1 (NC (B2 _ _) (B1 _)))) = undefined
+  regular (SR (SS1 (NC (B2 _ _) (B2 _ _)))) = undefined
+  regular (SR (SS1 (NC (B2 _ _) (B3 _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B2 _ _) (B4 _ _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B3 _ _ _) B0))) = undefined
+  regular (SR (SS1 (NC (B3 _ _ _) (B1 _)))) = undefined
+  regular (SR (SS1 (NC (B3 _ _ _) (B2 _ _)))) = undefined
+  regular (SR (SS1 (NC (B3 _ _ _) (B3 _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B3 _ _ _) (B4 _ _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) B0))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) (B1 _)))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) (B2 _ _)))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) (B3 _ _ _)))) = undefined
+  regular (SR (SS1 (NC (B4 _ _ _ _) (B4 _ _ _ _)))) = undefined-}
+  {-
+  regular (SR (SSC (NO (B1 _) (B1 _)) _)) = undefined
+  regular (SR (SSC (NO (B1 _) (B2 _ _)) _)) = undefined
+  regular (SR (SSC (NO (B1 _) (B3 _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B1 _) (B4 _ _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B2 _ _) (B1 _)) _)) = undefined
+  regular (SR (SSC (NO (B2 _ _) (B2 _ _)) _)) = undefined
+  regular (SR (SSC (NO (B2 _ _) (B3 _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B2 _ _) (B4 _ _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B3 _ _ _) (B1 _)) _)) = undefined
+  regular (SR (SSC (NO (B3 _ _ _) (B2 _ _)) _)) = undefined
+  regular (SR (SSC (NO (B3 _ _ _) (B3 _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B3 _ _ _) (B4 _ _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B4 _ _ _ _) (B1 _)) _)) = undefined
+  regular (SR (SSC (NO (B4 _ _ _ _) (B2 _ _)) _)) = undefined
+  regular (SR (SSC (NO (B4 _ _ _ _) (B3 _ _ _)) _)) = undefined
+  regular (SR (SSC (NO (B4 _ _ _ _) (B4 _ _ _ _)) _)) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC B0 B0)))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B2 _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B3 _ _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) B0)))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B2 _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B3 _ _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) B0)))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B2 _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B3 _ _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC _ (B5 _ _ _ _ _))))) = undefined
+  regular (SR (SSC (NO _ _) (SS1 (NC (B5 _ _ _ _ _) _)))) = undefined
+-}
+
+  regular (SR (SS1 (NC (B5 a b c d e) B0))) = go5 a b c d e
+  regular (SR (SS1 (NC B0 (B5 a b c d e)))) = go5 a b c d e
+  regular (SR (SS1 (NC (B5 a b c d e) (B1 f)))) = go6 a b c d e f
+  regular (SR (SS1 (NC (B5 a b c d e) (B2 f g)))) = SG (SSC (NO (B3 a b c) (B2 f g)) (SS1 (NC (B1 (P d e)) B0)))
+  regular (SR (SS1 (NC (B5 a b c d e) (B3 f g h)))) = SG (SSC (NO (B3 a b c) (B3 f g h)) (SS1 (NC (B1 (P d e)) B0)))
+  regular (SR (SS1 (NC (B5 a b c d e) (B4 f g h i)))) = SG (SSC (NO (B3 a b c) (B2 h i)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B5 a b c d e) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B4 a b c d) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC (B1 (P c d)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
+  regular (SR (SS1 (NC (B2 a b) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
+  regular (SR (SS1 (NC (B1 a) (B5 f g h i j)))) = SG (SS1 (NC (B3 a f g) (B3 h i j)))
+
+{-
+  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) B0)))) = go2 a b
+  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go4 a b i j
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go6 a b i j k l
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go8 a b i j k l m n
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go10 a b i j k l m n o p
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go6 a b c d i j
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go8 a b c d e f i j
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go10 a b c d e f g h i j
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go12 a b c d e f g h i j k l
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go14 a b c d e f g h i j k l m n
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b c d i j k l m n o p
+  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B3 a b k) B0))
+  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B3 a b k) B0))
+  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
+  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 a b i j q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 a b i j k l q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 a b i j k l m n q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 a b i j k l m n o p q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 a b c d i j q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 a b c d e f i j q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 a b c d e f g h i j q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 a b c d e f g h i j k l q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 a b c d e f g h i j k l m n q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f g h i j k l m n o p q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b c d i j k l m n o p q
+  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d e f i j k l m n o p q
+
+  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B2 k l)))
+  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B2 k l)))
+  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
+  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 a b i j q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 a b i j k l q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 a b i j k l m n q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b i j k l m n o p q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 a b c d i j q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 a b c d e f i j q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 a b c d e f g h i j q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 a b c d e f g h i j k l q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 a b c d e f g h i j k l m n q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f g h i j k l m n o p q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d i j k l m n o p q r
+  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f i j k l m n o p q r
+
+  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
+  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
+  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
+  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 a b i j q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 a b i j k l q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 a b i j k l m n q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b i j k l m n o p q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 a b c d i j q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 a b c d e f i j q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 a b c d e f g h i j q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 a b c d e f g h i j k l q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 a b c d e f g h i j k l m n q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f g h i j k l m n o p q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d i j k l m n o p q r s
+  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f i j k l m n o p q r s
+
+  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B1 (P a b)))))) = go6 a b k l m n
+  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B1 (P a b)) B0)))) = go6 a b k l m n
+  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 a b c d e f g h k l m n
+  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 a b c d e f g h k l m n
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 a b i j q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 a b i j k l q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 a b i j k l m n q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b i j k l m n o p q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 a b c d i j q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 a b c d e f i j q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 a b c d e f g h i j q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 a b c d e f g h i j k l q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 a b c d e f g h i j k l m n q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 a b c d e f g h i j k l m n o p q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d i j k l m n o p q r s t
+  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f i j k l m n o p q r s t
+
+  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go7 a b k l m n o
+  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go7 a b k l m n o
+  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 a b c d e f g h k l m n o
+  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 a b c d e f g h k l m n o
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 a b i j q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 a b i j k l q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 a b i j k l m n q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 a b c d i j q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 a b c d e f i j q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f i j k l m n o p q r s t u
+
+  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B1 (P a b)))))) = go3 k a b
+  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B1 (P a b)) B0)))) = go3 k a b
+  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go9 k a b c d e f g h
+  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go9 k a b c d e f g h
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 v a b i j
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 v a b i j k l
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 v a b i j k l m n
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 v a b i j k l m n o p
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 v a b c d i j
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 v a b c d e f i j
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 v a b c d e f g h i j
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 v a b c d e f g h i j k l
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 v a b c d e f g h i j k l m n
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v a b c d i j k l m n o p
+  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B1 (P a b)))))) = go4 k l a b
+  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B1 (P a b)) B0)))) = go4 k l a b
+  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go10 k l a b c d e f g h
+  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go10 k l a b c d e f g h
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 v w a b i j
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 v w a b i j k l
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 v w a b i j k l m n
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 v w a b i j k l m n o p
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 v w a b c d i j
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 v w a b c d e f i j
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 v w a b c d e f g h i j
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 v w a b c d e f g h i j k l
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w a b c d e f g h i j k l m n
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w a b c d i j k l m n o p
+  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B1 (P a b)))))) = go5 k l m a b
+  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B1 (P a b)) B0)))) = go5 k l m a b
+  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go11 k l m a b c d e f g h
+  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go11 k l m a b c d e f g h
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 v w x a b i j
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 v w x a b i j k l
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 v w x a b i j k l m n
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v w x a b i j k l m n o p
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 v w x a b c d i j
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 v w x a b c d e f i j
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 v w x a b c d e f g h i j
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 v w x a b c d e f g h i j k l
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x a b c d e f g h i j k l m n
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x a b c d i j k l m n o p
+  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B1 (P a b)))))) = go6 k l m n a b
+  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B1 (P a b)) B0)))) = go6 k l m n a b
+  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 k l m n a b c d e f g h
+  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 k l m n a b c d e f g h
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 v w x y a b i j
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 v w x y a b i j k l
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 v w x y a b i j k l m n
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w x y a b i j k l m n o p
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 v w x y a b c d i j
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 v w x y a b c d e f i j
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 v w x y a b c d e f g h i j
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 v w x y a b c d e f g h i j k l
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y a b c d e f g h i j k l m n
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y a b c d i j k l m n o p
+  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B1 (P a b)))))) = go7 k l m n o a b
+  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B1 (P a b)) B0)))) = go7 k l m n o a b
+  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 k l m n o a b c d e f g h
+  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 k l m n o a b c d e f g h
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 v w x y z a b i j
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 v w x y z a b i j k l
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 v w x y z a b i j k l m n
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x y z a b i j k l m n o p
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 v w x y z a b c d i j
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 v w x y z a b c d e f i j
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 v w x y z a b c d e f g h i j
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 v w x y z a b c d e f g h i j k l
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 v w x y z a b c d e f g h i j k l m n
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f g h i j k l m n o p
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b c d i j k l m n o p
+  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d e f i j k l m n o p
+
+  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B1 (P a b)))))) = go8 k l m n o a b p
+  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B1 (P a b)) B0)))) = go8 k l m n o a b p
+  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 k l m n o a b c d e f g h p
+  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 k l m n o a b c d e f g h p
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v w x y z a b i j q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v w x y z a b i j k l q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v w x y z a b i j k l m n q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y z a b i j k l m n o p q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v w x y z a b c d i j q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v w x y z a b c d e f i j q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v w x y z a b c d e f g h i j q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v w x y z a b c d e f g h i j k l q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v w x y z a b c d e f g h i j k l m n q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f g h i j k l m n o p q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b c d i j k l m n o p q
+  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d e f i j k l m n o p q
+
+  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B1 (P a b)))))) = go9 k l m n o a b p q
+  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B1 (P a b)) B0)))) = go9 k l m n o a b p q
+  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 k l m n o a b c d e f g h p q
+  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 k l m n o a b c d e f g h p q
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w x y z a b i j q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w x y z a b i j k l q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w x y z a b i j k l m n q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b i j k l m n o p q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w x y z a b c d i j q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w x y z a b c d e f i j q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w x y z a b c d e f g h i j q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w x y z a b c d e f g h i j k l q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w x y z a b c d e f g h i j k l m n q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f g h i j k l m n o p q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d i j k l m n o p q r
+  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f i j k l m n o p q r
+
+  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B1 (P a b)))))) = go10 k l m n o a b p q r
+  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B1 (P a b)) B0)))) = go10 k l m n o a b p q r
+  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 k l m n o a b c d e f g h p q r
+  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 k l m n o a b c d e f g h p q r
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x y z a b i j q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x y z a b i j k l q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x y z a b i j k l m n q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b i j k l m n o p q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x y z a b c d i j q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x y z a b c d e f i j q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x y z a b c d e f g h i j q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x y z a b c d e f g h i j k l q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x y z a b c d e f g h i j k l m n q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f g h i j k l m n o p q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d i j k l m n o p q r s
+  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f i j k l m n o p q r s
+
+  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B1 (P a b)))))) = go11 k l m n o a b p q r t
+  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B1 (P a b)) B0)))) = go11 k l m n o a b p q r t
+  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 k l m n o a b c d e f g h p q r t
+  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 k l m n o a b c d e f g h p q r t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y z a b i j q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y z a b i j k l q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y z a b i j k l m n q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b i j k l m n o p q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y z a b c d i j q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y z a b c d e f i j q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y z a b c d e f g h i j q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y z a b c d e f g h i j k l q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y z a b c d e f g h i j k l m n q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y z a b c d e f g h i j k l m n o p q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d i j k l m n o p q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f i j k l m n o p q r s t
+
+  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B1 (P a b)))))) = go12 k l m n o a b p q r s t
+  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B1 (P a b)) B0)))) = go12 k l m n o a b p q r s t
+  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go18 k l m n o a b c d e f g h p q r s t
+  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go18 k l m n o a b c d e f g h p q r s t
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go14 v w x y z a b i j q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go16 v w x y z a b i j k l q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y z a b i j k l m n q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go16 v w x y z a b c d i j q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go18 v w x y z a b c d e f i j q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go20 v w x y z a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go22 v w x y z a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go24 v w x y z a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go26 v w x y z a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f i j k l m n o p q r s t u
+
+  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go8 p a b k l m n o
+  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go8 p a b k l m n o
+  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 p a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 p a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v a b i j q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v a b i j k l q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v a b i j k l m n q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v a b c d i j q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v a b c d e f i j q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v a b c d e f i j k l m n o p q r s t u
+
+  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go9 p q a b k l m n o
+  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go9 p q a b k l m n o
+  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 p q a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 p q a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w a b i j q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w a b i j k l q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w a b i j k l m n q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w a b c d i j q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w a b c d e f i j q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w a b c d e f i j k l m n o p q r s t u
+
+  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go10 p q r a b k l m n o
+  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go10 p q r a b k l m n o
+  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 p q r a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 p q r a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x a b i j q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x a b i j k l q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x a b i j k l m n q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x a b c d i j q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x a b c d e f i j q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x a b c d e f i j k l m n o p q r s t u
+
+  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go11 p q r s a b k l m n o
+  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go11 p q r s a b k l m n o
+  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 p q r s a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 p q r s a b c d e f g h k l m n o
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y a b i j q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y a b i j k l q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y a b i j k l m n q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y a b i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y a b c d i j q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y a b c d e f i j q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y a b c d e f g h i j q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y a b c d e f g h i j k l q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y a b c d e f g h i j k l m n q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y a b c d e f g h i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
+  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
+-}
+
 
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
 fixRG (NO a@B0' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
@@ -823,19 +1381,7 @@ fixRY (NO a@B5' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
 fixRY (NO a@B5' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
 
-fixRY (NO a@B0' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-
+{-
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
@@ -1082,412 +1628,6 @@ fixRY (NO a@B5' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-{-
-  regular (SR (SS1 (NC B0 B0))) = undefined
-  regular (SR (SS1 (NC B0 (B1 _)))) = undefined
-  regular (SR (SS1 (NC B0 (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC B0 (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC B0 (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) B0))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B4 _ _ _ _)))) = undefined-}
-  {-
-  regular (SR (SSC (NO (B1 _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC _ (B5 _ _ _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B5 _ _ _ _ _) _)))) = undefined
 -}
-{-
-  regular (SR (SS1 (NC (B5 a b c d e) B0))) = go5 a b c d e
-  regular (SR (SS1 (NC B0 (B5 a b c d e)))) = go5 a b c d e
-  regular (SR (SS1 (NC (B5 a b c d e) (B1 f)))) = go6 a b c d e f
-  regular (SR (SS1 (NC (B5 a b c d e) (B2 f g)))) = SG (SSC (NO (B3 a b c) (B2 f g)) (SS1 (NC (B1 (P d e)) B0)))
-  regular (SR (SS1 (NC (B5 a b c d e) (B3 f g h)))) = SG (SSC (NO (B3 a b c) (B3 f g h)) (SS1 (NC (B1 (P d e)) B0)))
-  regular (SR (SS1 (NC (B5 a b c d e) (B4 f g h i)))) = SG (SSC (NO (B3 a b c) (B2 h i)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B5 a b c d e) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B4 a b c d) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC (B1 (P c d)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
-  regular (SR (SS1 (NC (B2 a b) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
-  regular (SR (SS1 (NC (B1 a) (B5 f g h i j)))) = SG (SS1 (NC (B3 a f g) (B3 h i j)))
 -}
-{-
-  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) B0)))) = go2 a b
-  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go4 a b i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go6 a b i j k l
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go8 a b i j k l m n
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go10 a b i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go6 a b c d i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go8 a b c d e f i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go10 a b c d e f g h i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go12 a b c d e f g h i j k l
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go14 a b c d e f g h i j k l m n
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b c d i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d e f i j k l m n o p
 
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B3 a b k) B0))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B3 a b k) B0))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 a b i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 a b i j k l q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 a b i j k l m n q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 a b i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 a b c d i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 a b c d e f i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 a b c d e f g h i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 a b c d e f g h i j k l q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 a b c d e f g h i j k l m n q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f g h i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b c d i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d e f i j k l m n o p q
-
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B2 k l)))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B2 k l)))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 a b i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 a b i j k l q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 a b i j k l m n q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 a b c d i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 a b c d e f i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 a b c d e f g h i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 a b c d e f g h i j k l q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 a b c d e f g h i j k l m n q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f g h i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f i j k l m n o p q r
-
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 a b i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 a b i j k l q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 a b i j k l m n q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 a b c d i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 a b c d e f i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 a b c d e f g h i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 a b c d e f g h i j k l q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 a b c d e f g h i j k l m n q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f g h i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f i j k l m n o p q r s
-
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B1 (P a b)))))) = go6 a b k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B1 (P a b)) B0)))) = go6 a b k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 a b c d e f g h k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 a b c d e f g h k l m n
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 a b i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 a b i j k l q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 a b i j k l m n q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 a b c d i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 a b c d e f i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 a b c d e f g h i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 a b c d e f g h i j k l q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 a b c d e f g h i j k l m n q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 a b c d e f g h i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f i j k l m n o p q r s t
-
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go7 a b k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go7 a b k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 a b c d e f g h k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 a b c d e f g h k l m n o
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 a b i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 a b i j k l q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 a b i j k l m n q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 a b c d i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 a b c d e f i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B1 (P a b)))))) = go3 k a b
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B1 (P a b)) B0)))) = go3 k a b
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go9 k a b c d e f g h
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go9 k a b c d e f g h
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 v a b i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 v a b i j k l
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 v a b i j k l m n
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 v a b i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 v a b c d i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 v a b c d e f i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 v a b c d e f g h i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 v a b c d e f g h i j k l
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 v a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v a b c d i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B1 (P a b)))))) = go4 k l a b
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B1 (P a b)) B0)))) = go4 k l a b
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go10 k l a b c d e f g h
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go10 k l a b c d e f g h
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 v w a b i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 v w a b i j k l
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 v w a b i j k l m n
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 v w a b i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 v w a b c d i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 v w a b c d e f i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 v w a b c d e f g h i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 v w a b c d e f g h i j k l
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w a b c d i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B1 (P a b)))))) = go5 k l m a b
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B1 (P a b)) B0)))) = go5 k l m a b
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go11 k l m a b c d e f g h
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go11 k l m a b c d e f g h
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 v w x a b i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 v w x a b i j k l
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 v w x a b i j k l m n
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v w x a b i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 v w x a b c d i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 v w x a b c d e f i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 v w x a b c d e f g h i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 v w x a b c d e f g h i j k l
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x a b c d i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B1 (P a b)))))) = go6 k l m n a b
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B1 (P a b)) B0)))) = go6 k l m n a b
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 k l m n a b c d e f g h
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 k l m n a b c d e f g h
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 v w x y a b i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 v w x y a b i j k l
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 v w x y a b i j k l m n
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w x y a b i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 v w x y a b c d i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 v w x y a b c d e f i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 v w x y a b c d e f g h i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 v w x y a b c d e f g h i j k l
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y a b c d i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B1 (P a b)))))) = go7 k l m n o a b
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B1 (P a b)) B0)))) = go7 k l m n o a b
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 k l m n o a b c d e f g h
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 k l m n o a b c d e f g h
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 v w x y z a b i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 v w x y z a b i j k l
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 v w x y z a b i j k l m n
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x y z a b i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 v w x y z a b c d i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 v w x y z a b c d e f i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 v w x y z a b c d e f g h i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 v w x y z a b c d e f g h i j k l
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 v w x y z a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b c d i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B1 (P a b)))))) = go8 k l m n o a b p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B1 (P a b)) B0)))) = go8 k l m n o a b p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 k l m n o a b c d e f g h p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 k l m n o a b c d e f g h p
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v w x y z a b i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v w x y z a b i j k l q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v w x y z a b i j k l m n q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y z a b i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v w x y z a b c d i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v w x y z a b c d e f i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v w x y z a b c d e f g h i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v w x y z a b c d e f g h i j k l q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v w x y z a b c d e f g h i j k l m n q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f g h i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b c d i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d e f i j k l m n o p q
-
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B1 (P a b)))))) = go9 k l m n o a b p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B1 (P a b)) B0)))) = go9 k l m n o a b p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 k l m n o a b c d e f g h p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 k l m n o a b c d e f g h p q
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w x y z a b i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w x y z a b i j k l q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w x y z a b i j k l m n q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w x y z a b c d i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w x y z a b c d e f i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w x y z a b c d e f g h i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w x y z a b c d e f g h i j k l q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w x y z a b c d e f g h i j k l m n q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f g h i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f i j k l m n o p q r
-
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B1 (P a b)))))) = go10 k l m n o a b p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B1 (P a b)) B0)))) = go10 k l m n o a b p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 k l m n o a b c d e f g h p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 k l m n o a b c d e f g h p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x y z a b i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x y z a b i j k l q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x y z a b i j k l m n q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x y z a b c d i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x y z a b c d e f i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x y z a b c d e f g h i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x y z a b c d e f g h i j k l q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x y z a b c d e f g h i j k l m n q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f g h i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f i j k l m n o p q r s
-
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B1 (P a b)))))) = go11 k l m n o a b p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B1 (P a b)) B0)))) = go11 k l m n o a b p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 k l m n o a b c d e f g h p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 k l m n o a b c d e f g h p q r t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y z a b i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y z a b i j k l q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y z a b i j k l m n q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y z a b c d i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y z a b c d e f i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y z a b c d e f g h i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y z a b c d e f g h i j k l q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y z a b c d e f g h i j k l m n q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y z a b c d e f g h i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f i j k l m n o p q r s t
-
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B1 (P a b)))))) = go12 k l m n o a b p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B1 (P a b)) B0)))) = go12 k l m n o a b p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go18 k l m n o a b c d e f g h p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go18 k l m n o a b c d e f g h p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go14 v w x y z a b i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go16 v w x y z a b i j k l q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y z a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go16 v w x y z a b c d i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go18 v w x y z a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go20 v w x y z a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go22 v w x y z a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go24 v w x y z a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go26 v w x y z a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go8 p a b k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go8 p a b k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 p a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 p a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v a b i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v a b i j k l q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v a b c d i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go9 p q a b k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go9 p q a b k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 p q a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 p q a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w a b i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w a b i j k l q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w a b c d i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go10 p q r a b k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go10 p q r a b k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 p q r a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 p q r a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x a b i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x a b i j k l q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x a b c d i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go11 p q r s a b k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go11 p q r s a b k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 p q r s a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 p q r s a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y a b i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y a b i j k l q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y a b c d i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
--}

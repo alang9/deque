@@ -397,6 +397,22 @@ pre a (B2 b c) = B3 a b c
 pre a (B3 b c d) = B4 a b c d
 pre a (B4 b c d e) = B5 a b c d e
 
+data BCons n r a c where
+  BCons :: r b c -> Buffer n r a b -> BCons (n + 1) r a c
+  BCEmpty :: BCons 0 r a a
+
+data BSnoc n r a c where
+  BSnoc :: Buffer n r b c -> r a b -> BSnoc (n + 1) r a c
+  BSEmpty :: BSnoc 0 r a a
+
+unpre :: Buffer n r a c -> BCons n r a c
+unpre B0             = BCEmpty
+unpre (B1 a)         = BCons a B0
+unpre (B2 a b)       = BCons a (B1 b)
+unpre (B3 a b c)     = BCons a (B2 b c)
+unpre (B4 a b c d)   = BCons a (B3 b c d)
+unpre (B5 a b c d e) = BCons a (B4 b c d e)
+
 data Foo a b where
   F :: Int -> Foo () ()
 
@@ -404,7 +420,6 @@ empty :: Deque r a a
 empty = D $ SG (SS1 (NC B0 B0))
 
 cons :: r b c -> Deque r a b -> Deque r a c
-
 cons a (D (SG (SSC (NO b@B2' e@B2') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
 cons a (D (SG (SSC (NO b@B2' e@B3') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
 cons a (D (SG (SSC (NO b@B3' e@B2') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
@@ -949,6 +964,18 @@ instance Reg Semi R r a b where
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
 -}
+
+unpost = undefined
+
+fixRGC :: Node R (Open (Pair r) c d) r a b -> Node G (Closed (Pair (Pair r)) e e) (Pair r) c d -> GorY t r a b
+fixRGC (NO a b) (NC c d) = case (unpost b, unpre c) of
+  (BSnoc e f, BCons g h) -> fixRG (NO a b) (NC c d)
+  (BSEmpty, BCons g h@B1') -> fixRG (NO a b) (NC (B1 g) h)
+  (BSEmpty, BCons g h@B2') -> fixRG (NO a b) (NC (B1 g) h)
+  (BSEmpty, BCons g h@B3') -> fixRG (NO a b) (NC (B1 g) h)
+  (BSEmpty, BCons g h@B4') -> fixRG (NO a b) (NC (B1 g) h)
+  (BSnoc e@B1' f, BCEmpty) -> fixRG (NO a b) (NC e (B1 f))
+
 
 
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
@@ -1629,5 +1656,5 @@ fixRY (NO a@B5' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 -}
--}
+
 

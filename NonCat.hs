@@ -8,6 +8,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -17,6 +18,11 @@ module NonCat where
 import GHC.TypeLits
 
 data Colour = R | Y | G
+
+instance Show Colour where
+  show R = "R"
+  show Y = "Y"
+  show G = "G"
 
 type family MinO (a :: Nat) (b :: Nat) :: Colour where
   MinO 0 a = R
@@ -124,15 +130,15 @@ data RBP (u :: Nat) (d :: Nat) r a b where
   RBP :: Buffer n (Pair r) b c -> Buffer m r a b -> RBP m n r a c
 
 data Genus a where
-  Closed :: (a -> a -> a) -> a -> a -> Genus a
+  Closed :: Genus a
   Open :: (a -> a -> a) -> a -> a -> Genus a
 
 data Pair r a b where
   P :: r b c -> r a b -> Pair r a c
 
 data Node c (t :: Genus *) r a b where
-  NO :: Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
-  NC :: Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) (Closed (Pair r) b b) r a c
+  NO :: (HasColour (MinO c1 c2)) => Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
+  NC :: (HasColour (MinC c1 c2)) => Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) Closed r a c
 
 deriving instance Show (Node c t r a b)
 
@@ -145,9 +151,9 @@ deriving instance Show (SubStack c t r a b)
 data Regular = Full | Semi
 
 data Stack reg c1 r a b where
-  SY :: SubStack Y (Closed t d d) r a b -> Stack Full Y r a b
-  SG :: SubStack G (Closed t d d) r a b -> Stack Full G r a b
-  SR :: SubStack R (Closed t d d) r a b -> Stack Semi R r a b
+  SY :: SubStack Y Closed r a b -> Stack Full Y r a b
+  SG :: SubStack G Closed r a b -> Stack Full G r a b
+  SR :: SubStack R Closed r a b -> Stack Semi R r a b
   SYG :: SubStack Y (Open t c d) r a b -> Stack Full G t c d -> Stack Full Y r a b
   SRG :: SubStack R (Open t c d) r a b -> Stack Full G t c d -> Stack Semi R r a b
   SYR :: SubStack Y (Open t c d) r a b -> Stack Semi R t c d -> Stack Semi Y r a b
@@ -157,7 +163,7 @@ data Stack reg c1 r a b where
 deriving instance Show (Stack c t r a b)
 
 class Reg reg c1 r a b where
-  regular :: Stack reg c1 r a b -> Stack Full (RegCol c1) r a b
+  regular :: Stack reg c1 r a b -> Deque r a b
 
 type family RegCol (c :: Colour) :: Colour where
   RegCol R = G
@@ -165,14 +171,18 @@ type family RegCol (c :: Colour) :: Colour where
   RegCol G = G
 
 instance Reg Full G r a b where
-  regular = id
+  regular = D
 
 instance Reg Full Y r a b where
-  regular = id
+  regular = D
 
 instance Reg Semi Y r a b where
-  regular (SYR foo bar) = SYG foo (regular bar)
+  regular (SYR foo bar) =
+    case regular bar of
+      D baz -> case stackColour baz of
+        G' -> D $ SYG foo baz
 
+go1 a = SY (SS1 (NC (B1 a) B0))
 go2 a b = SG (SS1 (NC (B2 a b) B0))
 go3 a b c = SG (SS1 (NC (B3 a b c) B0))
 go4 a b c d = SG (SS1 (NC (B2 a b) (B2 c d)))
@@ -258,6 +268,7 @@ lb' (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c
 lb' (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
 lb' (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP $ l13 a b c d e f g h i j k l m
 lb' _ _ = undefined
+{-# INLINE lb' #-}
 
 rb' :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBP (Up k) (Down k) r a c
 rb' (B1 (P n o)) B0                                     = uncurry RBP $ r2 n o
@@ -285,6 +296,7 @@ rb' (B2 (P n o) (P p q)) (B5 v w x y z)                 = uncurry RBP $ r9 n o p
 rb' (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o p q r s v w x y z
 rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
 rb' _ _ = undefined
+{-# INLINE rb' #-}
 
 class Combine c t rem where
   type Regularity c t rem :: Regular
@@ -307,63 +319,78 @@ instance Combine R Open (Stack Full G) where
   combine n1 ss = SRG (SS1 n1) ss
 
 
-class Combine2 c2 t rem where
-  combine2 :: Node G (Open (Pair r) c d) r a b -> Node c2 (t (Pair (Pair r)) e f) (Pair r) c d -> rem (Pair (Pair r)) e f-> Stack Full G r a b
+class Combine2 r c2 rem where
+  type Opening rem :: Genus *
+  combine2 :: Node G (Open (Pair r) c d) r a b -> Node c2 (Opening rem) (Pair r) c d -> rem -> Stack Full G r a b
 
 data Remainder r a b where
   YG :: SubStack Y (Open t c d) r a b -> Stack Full G t c d -> Remainder r a b
   YR :: SubStack Y (Open t c d) r a b -> Stack Semi R t c d -> Remainder r a b
 
-data CL (r :: * -> * -> *) a b where
-  CL :: CL r a a
+data CL where
+  CL :: CL
 
-instance Combine2 G Open (SubStack Y (Closed t d d)) where
+instance Combine2 r G (SubStack Y Closed (Pair (Pair r)) e f) where
+  type Opening (SubStack Y Closed (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 ss = SGG (SS1 n1) (SG (SSC n2 ss))
 
-instance Combine2 Y Open (SubStack Y (Closed t d d)) where
+instance Combine2 r Y (SubStack Y Closed (Pair (Pair r)) e f) where
+  type Opening (SubStack Y Closed (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 ss = SG (SSC n1 (SSC n2 ss))
 
-instance Combine2 R Open (SubStack Y (Closed t d d)) where
+instance Combine2 r R (SubStack Y Closed (Pair (Pair r)) e f) where
+  type Opening (SubStack Y Closed (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 ss = SGR (SS1 n1) (SR (SSC n2 ss))
 
-instance Combine2 G Open (Stack Full G) where
+instance Combine2 r G (Stack Full G (Pair (Pair r)) e f) where
+  type Opening (Stack Full G (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 s = SGG (SS1 n1) (SGG (SS1 n2) s)
 
-instance Combine2 Y Open (Stack Full G) where
+instance Combine2 r Y (Stack Full G (Pair (Pair r)) e f) where
+  type Opening (Stack Full G (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 s = SGG (SSC n1 (SS1 n2)) s
 
-instance Combine2 R Open (Stack Full G) where
+instance Combine2 r R (Stack Full G (Pair (Pair r)) e f) where
+  type Opening (Stack Full G (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 s = SGR (SS1 n1) (SRG (SS1 n2) s)
 
-instance Combine2 G Open (Stack Semi R) where
+instance Combine2 r G (Stack Semi R (Pair (Pair r)) e f) where
+  type Opening (Stack Semi R (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 s = SGG (SS1 n1) (SGR (SS1 n2) s)
 
-instance Combine2 Y Open (Stack Semi R) where
+instance Combine2 r Y (Stack Semi R (Pair (Pair r)) e f) where
+  type Opening (Stack Semi R (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 s = SGR (SSC n1 (SS1 n2)) s
 
-instance Combine2 G Open Remainder where
+instance Combine2 r G (Remainder (Pair (Pair r)) e f) where
+  type Opening (Remainder (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 (YG ss s) = SGG (SS1 n1) $ SGG (SSC n2 ss) $ s
   combine2 n1 n2 (YR ss s) = SGG (SS1 n1) $ SGR (SSC n2 ss) $ s
 
-instance Combine2 Y Open Remainder where
+instance Combine2 r Y (Remainder (Pair (Pair r)) e f) where
+  type Opening (Remainder (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 (YG ss s) = SGG (SSC n1 (SSC n2 ss)) $ s
   combine2 n1 n2 (YR ss s) = SGR (SSC n1 (SSC n2 ss)) $ s
 
-instance Combine2 R Open Remainder where
+instance Combine2 r R (Remainder (Pair (Pair r)) e f) where
+  type Opening (Remainder (Pair (Pair r)) e f) = Open (Pair (Pair r)) e f
   combine2 n1 n2 (YG ss s) = SGR (SS1 n1) $ SRG (SSC n2 ss) $ s
   combine2 _ _ (YR _ _) = error "Impossible"
 
-instance Combine2 G Closed CL where
+instance Combine2 r G CL where
+  type Opening CL = Closed
   combine2 (NO a@B2' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
   combine2 (NO a@B2' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
   combine2 (NO a@B3' b@B2') (NC B0 B0) CL = SG (SS1 (NC a b))
   combine2 (NO a@B3' b@B3') (NC B0 B0) CL = SG (SS1 (NC a b))
   combine2 n1 n2 CL = SGG (SS1 n1) $ SG (SS1 n2)
 
-instance Combine2 Y Closed CL where
+instance Combine2 r Y CL where
+  type Opening CL = Closed
   combine2 n1 n2 CL = SG (SSC n1 (SS1 n2))
 
-instance Combine2 R Closed CL where
+instance Combine2 r R CL where
+  type Opening CL = Closed
   combine2 n1 n2 CL = SGR (SS1 n1) $ SR (SS1 n2)
 
 
@@ -382,11 +409,11 @@ data GorYorR t r a b where
   GG3 :: Node G (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorYorR t r a b
   GY3 :: Node G (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
   GR3 :: Node G (Open (Pair r) c d) r a b -> Node R t (Pair r) c d -> GorYorR t r a b
-  G3 :: Node G (Closed (Pair r) c c) r a b -> GorYorR (Closed (Pair r) c c) r a b
-  Y3 :: Node Y (Closed (Pair r) c c) r a b -> GorYorR (Closed (Pair r) c c) r a b
+  G3 :: Node G Closed r a b -> GorYorR Closed r a b
+  Y3 :: Node Y Closed r a b -> GorYorR Closed r a b
 
 data Deque r a b where
-  D :: Stack Full c r a b -> Deque r a b
+  D :: HasColour c => Stack Full c r a b -> Deque r a b
 
 deriving instance Show (Deque r a b)
 
@@ -396,6 +423,7 @@ pre a (B1 b) = B2 a b
 pre a (B2 b c) = B3 a b c
 pre a (B3 b c d) = B4 a b c d
 pre a (B4 b c d e) = B5 a b c d e
+{-# INLINE pre #-}
 
 data BCons n r a c where
   BCons :: r b c -> Buffer n r a b -> BCons (n + 1) r a c
@@ -412,148 +440,161 @@ unpre (B2 a b)       = BCons a (B1 b)
 unpre (B3 a b c)     = BCons a (B2 b c)
 unpre (B4 a b c d)   = BCons a (B3 b c d)
 unpre (B5 a b c d e) = BCons a (B4 b c d e)
+{-# INLINE unpre #-}
+
+unpost :: Buffer n r a c -> BSnoc n r a c
+unpost B0             = BSEmpty
+unpost (B1 a)         = BSnoc B0 a
+unpost (B2 a b)       = BSnoc (B1 a) b
+unpost (B3 a b c)     = BSnoc (B2 a b) c
+unpost (B4 a b c d)   = BSnoc (B3 a b c) d
+unpost (B5 a b c d e) = BSnoc (B4 a b c d) e
+{-# INLINE unpost #-}
 
 data Foo a b where
   F :: Int -> Foo () ()
+
+instance Show (Foo a b) where
+  show (F n) = show n
 
 empty :: Deque r a a
 empty = D $ SG (SS1 (NC B0 B0))
 
 cons :: r b c -> Deque r a b -> Deque r a c
-cons a (D (SG (SSC (NO b@B2' e@B2') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
-cons a (D (SG (SSC (NO b@B2' e@B3') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
-cons a (D (SG (SSC (NO b@B3' e@B2') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SG (SSC (NO b@B3' e@B3') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SG (SS1 (NC b@B0' e@B0'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B2' e@B0'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B2' e@B2'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B2' e@B3'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B3' e@B0'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B3' e@B2'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B3' e@B3'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B0' e@B2'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SG (SS1 (NC b@B0' e@B3'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SSC (NO b@B1' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B1' e@B2') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B1' e@B3') f)))    = D $ regular $ SG $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B1' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B2' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B2' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B3' e@B1') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B3' e@B4') f)))    = D $ regular $ SY $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B4' e@B1') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B4' e@B2') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B4' e@B3') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
-cons a (D (SY (SSC (NO b@B4' e@B4') f)))    = D $ regular $ SR $ SSC (NO (pre a b) e) f
-cons a (D (SY (SS1 (NC b@B1' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B1' e@B2'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B1' e@B3'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B1' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B2' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B2' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B3' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B3' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B4' e@B1'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B4' e@B2'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B4' e@B3'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B4' e@B4'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B0' e@B1'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B0' e@B4'))))      = D $ regular $ SY $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B1' e@B0'))))      = D $ regular $ SG $ SS1 (NC (pre a b) e)
-cons a (D (SY (SS1 (NC b@B4' e@B0'))))      = D $ regular $ SR $ SS1 (NC (pre a b) e)
-cons a (D (SGG (SSC (NO b@B2' e@B2') f) g)) = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
-cons a (D (SGG (SSC (NO b@B2' e@B3') f) g)) = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
-cons a (D (SGG (SSC (NO b@B3' e@B2') f) g)) = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SGG (SSC (NO b@B3' e@B3') f) g)) = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SGG (SS1 (NO b@B2' e@B2')) g))   = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
-cons a (D (SGG (SS1 (NO b@B2' e@B3')) g))   = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
-cons a (D (SGG (SS1 (NO b@B3' e@B2')) g))   = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SGG (SS1 (NO b@B3' e@B3')) g))   = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SGR (SSC (NO b@B2' e@B2') f) g)) = D $ regular $ SGR (SSC (NO (pre a b) e) f) g
-cons a (D (SGR (SSC (NO b@B2' e@B3') f) g)) = D $ regular $ SGR (SSC (NO (pre a b) e) f) g
-cons a (D (SGR (SSC (NO b@B3' e@B2') f) g)) = D $ regular $ SYR (SSC (NO (pre a b) e) f) g
-cons a (D (SGR (SSC (NO b@B3' e@B3') f) g)) = D $ regular $ SYR (SSC (NO (pre a b) e) f) g
-cons a (D (SGR (SS1 (NO b@B2' e@B2')) g))   = D $ regular $ SGR (SS1 (NO (pre a b) e)) g
-cons a (D (SGR (SS1 (NO b@B2' e@B3')) g))   = D $ regular $ SGR (SS1 (NO (pre a b) e)) g
-cons a (D (SGR (SS1 (NO b@B3' e@B2')) g))   = D $ regular $ SYR (SS1 (NO (pre a b) e)) g
-cons a (D (SGR (SS1 (NO b@B3' e@B3')) g))   = D $ regular $ SYR (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SSC (NO b@B1' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B1' e@B2') f) g))    = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B1' e@B3') f) g))    = D $ regular $ SGG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B1' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B2' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B2' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B3' e@B1') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B3' e@B4') f) g))    = D $ regular $ SYG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B4' e@B1') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B4' e@B2') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B4' e@B3') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SSC (NO b@B4' e@B4') f) g))    = D $ regular $ SRG (SSC (NO (pre a b) e) f) g
-cons a (D (SYG (SS1 (NO b@B1' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B1' e@B2')) g))      = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B1' e@B3')) g))      = D $ regular $ SGG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B1' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B2' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B2' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B3' e@B1')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B3' e@B4')) g))      = D $ regular $ SYG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B4' e@B1')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B4' e@B2')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B4' e@B3')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
-cons a (D (SYG (SS1 (NO b@B4' e@B4')) g))      = D $ regular $ SRG (SS1 (NO (pre a b) e)) g
-
+cons a (D (SG (SSC (NO b@B2' e@B2') f)))    = regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B2' e@B3') f)))    = regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B3' e@B2') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SG (SSC (NO b@B3' e@B3') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SG (SS1 (NC b@B0' e@B0'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B0'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B2'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B2' e@B3'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B0'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B2'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B3' e@B3'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B0' e@B2'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SG (SS1 (NC b@B0' e@B3'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SSC (NO b@B1' e@B1') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B2') f)))    = regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B3') f)))    = regular $ SG $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B1' e@B4') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B2' e@B1') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B2' e@B4') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B3' e@B1') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B3' e@B4') f)))    = regular $ SY $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B1') f)))    = regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B2') f)))    = regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B3') f)))    = regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SSC (NO b@B4' e@B4') f)))    = regular $ SR $ SSC (NO (pre a b) e) f
+cons a (D (SY (SS1 (NC b@B1' e@B1'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B2'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B3'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B4'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B2' e@B1'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B2' e@B4'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B3' e@B1'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B3' e@B4'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B1'))))      = regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B2'))))      = regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B3'))))      = regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B4'))))      = regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B0' e@B1'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B0' e@B4'))))      = regular $ SY $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B1' e@B0'))))      = regular $ SG $ SS1 (NC (pre a b) e)
+cons a (D (SY (SS1 (NC b@B4' e@B0'))))      = regular $ SR $ SS1 (NC (pre a b) e)
+cons a (D (SGG (SSC (NO b@B2' e@B2') f) g)) = regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B2' e@B3') f) g)) = regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B3' e@B2') f) g)) = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SSC (NO b@B3' e@B3') f) g)) = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SGG (SS1 (NO b@B2' e@B2')) g))   = regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B2' e@B3')) g))   = regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B3' e@B2')) g))   = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SGG (SS1 (NO b@B3' e@B3')) g))   = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SSC (NO b@B2' e@B2') f) g)) = regular $ SGR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B2' e@B3') f) g)) = regular $ SGR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B3' e@B2') f) g)) = regular $ SYR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SSC (NO b@B3' e@B3') f) g)) = regular $ SYR (SSC (NO (pre a b) e) f) g
+cons a (D (SGR (SS1 (NO b@B2' e@B2')) g))   = regular $ SGR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B2' e@B3')) g))   = regular $ SGR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B3' e@B2')) g))   = regular $ SYR (SS1 (NO (pre a b) e)) g
+cons a (D (SGR (SS1 (NO b@B3' e@B3')) g))   = regular $ SYR (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SSC (NO b@B1' e@B1') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B2') f) g))    = regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B3') f) g))    = regular $ SGG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B1' e@B4') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B2' e@B1') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B2' e@B4') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B3' e@B1') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B3' e@B4') f) g))    = regular $ SYG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B1') f) g))    = regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B2') f) g))    = regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B3') f) g))    = regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SSC (NO b@B4' e@B4') f) g))    = regular $ SRG (SSC (NO (pre a b) e) f) g
+cons a (D (SYG (SS1 (NO b@B1' e@B1')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B2')) g))      = regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B3')) g))      = regular $ SGG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B1' e@B4')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B2' e@B1')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B2' e@B4')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B3' e@B1')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B3' e@B4')) g))      = regular $ SYG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B1')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B2')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B3')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
+cons a (D (SYG (SS1 (NO b@B4' e@B4')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
+{-# INLINE cons #-}
 
 instance Reg Semi R r a b where
-  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
-  regular (SR (SSC (NO B0 (B1 c)) (SS1 (NC B0 (B1 (P a b)))))) = go3 a b c
-{-  regular (SR (SSC (NO B0 c) (SS1 (NC B0 (B1 (P a b)))))) =
-    case fixRG (NO (B2 a b) c) (NC B0 B0) of
-      GG2 a b -> combine2 a b CL
-      GY2 a b -> combine2 a b CL-}
+  regular (SR (SSC n1 (SS1 n2 ))) = case fixRGC n1 n2 of
+    Left goryorr -> case goryorr of
+      GG3 a b -> D $ combine2 a b CL
+      GY3 a b -> D $ combine2 a b CL
+      GR3 a b -> D $ combine2 a b CL
+    Right d -> d
   regular (SR (SSC n1@(NO _ _) (SS1 n2@(NC _ _)))) =
     case fixRY n1 n2 of
-      GG3 a b -> combine2 a b CL
-      GY3 a b -> combine2 a b CL
-      GR3 a b -> combine2 a b CL
+      GG3 a b -> D $ combine2 a b CL
+      GY3 a b -> D $ combine2 a b CL
+      GR3 a b -> D $ combine2 a b CL
   regular (SRG (SS1 n1@(NO _ _)) (SG (SS1 n2@(NC _ _)))) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b CL
-      GY2 a b -> combine2 a b CL
+      GG2 a b -> D $ combine2 a b CL
+      GY2 a b -> D $ combine2 a b CL
   regular (SR (SSC n1 (SSC n2 ss))) =
     case fixRY n1 n2 of
-      GG3 a b -> combine2 a b ss
-      GY3 a b -> combine2 a b ss
-      GR3 a b -> combine2 a b ss
+      GG3 a b -> D $ combine2 a b ss
+      GY3 a b -> D $ combine2 a b ss
+      GR3 a b -> D $ combine2 a b ss
   regular (SRG (SS1 n1@(NO _ _)) (SG (SSC n2@(NO _ _) ss))) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b ss
-      GY2 a b -> combine2 a b ss
+      GG2 a b -> D $ combine2 a b ss
+      GY2 a b -> D $ combine2 a b ss
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b s
-      GY2 a b -> combine2 a b s
+      GG2 a b -> D $ combine2 a b s
+      GY2 a b -> D $ combine2 a b s
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b s
-      GY2 a b -> combine2 a b s
+      GG2 a b -> D $ combine2 a b s
+      GY2 a b -> D $ combine2 a b s
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b (YR ss s)
-      GY2 a b -> combine2 a b (YR ss s)
+      GG2 a b -> D $ combine2 a b (YR ss s)
+      GY2 a b -> D $ combine2 a b (YR ss s)
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> combine2 a b (YG ss s)
-      GY2 a b -> combine2 a b (YG ss s)
+      GG2 a b -> D $ combine2 a b (YG ss s)
+      GY2 a b -> D $ combine2 a b (YG ss s)
   regular (SRG (SSC n1@(NO _ _) (SS1 n2@(NO _ _))) s) =
     case fixRY n1 n2 of
-      GG3 a b -> combine2 a b s
-      GY3 a b -> combine2 a b s
-      GR3 a b -> combine2 a b s
+      GG3 a b -> D $ combine2 a b s
+      GY3 a b -> D $ combine2 a b s
+      GR3 a b -> D $ combine2 a b s
   regular (SRG (SSC n1@(NO _ _) (SSC n2@(NO _ _) ss)) s) =
     case fixRY n1 n2 of
-      GG3 a b -> combine2 a b (YG ss s)
-      GY3 a b -> combine2 a b (YG ss s)
-      GR3 a b -> combine2 a b (YG ss s)
+      GG3 a b -> D $ combine2 a b (YG ss s)
+      GY3 a b -> D $ combine2 a b (YG ss s)
+      GR3 a b -> D $ combine2 a b (YG ss s)
 
 {-
   regular (SR (SS1 (NC B0 B0))) = undefined
@@ -611,17 +652,17 @@ instance Reg Semi R r a b where
   regular (SR (SSC (NO _ _) (SS1 (NC (B5 _ _ _ _ _) _)))) = undefined
 -}
 
-  regular (SR (SS1 (NC (B5 a b c d e) B0))) = go5 a b c d e
-  regular (SR (SS1 (NC B0 (B5 a b c d e)))) = go5 a b c d e
-  regular (SR (SS1 (NC (B5 a b c d e) (B1 f)))) = go6 a b c d e f
-  regular (SR (SS1 (NC (B5 a b c d e) (B2 f g)))) = SG (SSC (NO (B3 a b c) (B2 f g)) (SS1 (NC (B1 (P d e)) B0)))
-  regular (SR (SS1 (NC (B5 a b c d e) (B3 f g h)))) = SG (SSC (NO (B3 a b c) (B3 f g h)) (SS1 (NC (B1 (P d e)) B0)))
-  regular (SR (SS1 (NC (B5 a b c d e) (B4 f g h i)))) = SG (SSC (NO (B3 a b c) (B2 h i)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B5 a b c d e) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B4 a b c d) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC (B1 (P c d)) (B1 (P f g)))))
-  regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j)))) = SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
-  regular (SR (SS1 (NC (B2 a b) (B5 f g h i j)))) = SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
-  regular (SR (SS1 (NC (B1 a) (B5 f g h i j)))) = SG (SS1 (NC (B3 a f g) (B3 h i j)))
+  regular (SR (SS1 (NC (B5 a b c d e) B0)))             = D $ go5 a b c d e
+  regular (SR (SS1 (NC B0 (B5 a b c d e))))             = D $ go5 a b c d e
+  regular (SR (SS1 (NC (B5 a b c d e) (B1 f))))         = D $ go6 a b c d e f
+  regular (SR (SS1 (NC (B5 a b c d e) (B2 f g))))       = D $ SG (SSC (NO (B3 a b c) (B2 f g)) (SS1 (NC (B1 (P d e)) B0)))
+  regular (SR (SS1 (NC (B5 a b c d e) (B3 f g h))))     = D $ SG (SSC (NO (B3 a b c) (B3 f g h)) (SS1 (NC (B1 (P d e)) B0)))
+  regular (SR (SS1 (NC (B5 a b c d e) (B4 f g h i))))   = D $ SG (SSC (NO (B3 a b c) (B2 h i)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B5 a b c d e) (B5 f g h i j)))) = D $ SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC (B1 (P d e)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B4 a b c d) (B5 f g h i j))))   = D $ SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC (B1 (P c d)) (B1 (P f g)))))
+  regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j))))     = D $ SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
+  regular (SR (SS1 (NC (B2 a b) (B5 f g h i j))))       = D $ SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
+  regular (SR (SS1 (NC (B1 a) (B5 f g h i j))))         = D $ SG (SS1 (NC (B3 a f g) (B3 h i j)))
 
 {-
   regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
@@ -964,18 +1005,166 @@ instance Reg Semi R r a b where
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
 -}
+  {-# INLINE regular #-}
 
-unpost = undefined
 
-fixRGC :: Node R (Open (Pair r) c d) r a b -> Node G (Closed (Pair (Pair r)) e e) (Pair r) c d -> GorY t r a b
-fixRGC (NO a b) (NC c d) = case (unpost b, unpre c) of
-  (BSnoc e f, BCons g h) -> fixRG (NO a b) (NC c d)
-  (BSEmpty, BCons g h@B1') -> fixRG (NO a b) (NC (B1 g) h)
-  (BSEmpty, BCons g h@B2') -> fixRG (NO a b) (NC (B1 g) h)
-  (BSEmpty, BCons g h@B3') -> fixRG (NO a b) (NC (B1 g) h)
-  (BSEmpty, BCons g h@B4') -> fixRG (NO a b) (NC (B1 g) h)
-  (BSnoc e@B1' f, BCEmpty) -> fixRG (NO a b) (NC e (B1 f))
+toGorYorR :: GorY t r a b -> GorYorR t r a b
+toGorYorR = undefined
 
+fixRGC :: HasColour k => Node R (Open (Pair r) c d) r a b -> Node k t (Pair r) c d -> Either (GorYorR t r a b) (Deque r a b)
+fixRGC n1@(NO a b) n2@(NC c d) = case (unpost c, unpre d) of
+  (BSnoc e f, BCons g h) -> Left $ case nodeColour n2 of
+    G' -> toGorYorR $ fixRG n1 n2
+    Y' -> fixRY n1 n2
+  (BSEmpty, BCons g h@B1') -> Left $ fixRY n1 (NC (B1 g) h)
+  (BSEmpty, BCons g h@B2') -> Left $ fixRY n1 (NC (B1 g) h)
+  (BSEmpty, BCons g h@B3') -> Left $ fixRY n1 (NC (B1 g) h)
+  (BSEmpty, BCons g h@B4') -> Left $ fixRY n1 (NC (B1 g) h)
+  (BSnoc e@B1' f, BCEmpty) -> Left $ fixRY n1 (NC e (B1 f))
+  (BSnoc e@B2' f, BCEmpty) -> Left $ fixRY n1 (NC e (B1 f))
+  (BSnoc e@B3' f, BCEmpty) -> Left $ fixRY n1 (NC e (B1 f))
+  (BSnoc e@B4' f, BCEmpty) -> Left $ fixRY n1 (NC e (B1 f))
+  (BSEmpty, BCons (P g h) B0) ->
+    case (a, b) of
+      (B0, B0)             -> Right $ D $ go2 g h
+      (B0, (B1 i))         -> Right $ D $ go3 g h i
+      (B0, (B2 i j))       -> Right $ D $ go4 g h i j
+      (B0, (B3 i j k))     -> Right $ D $ go5 g h i j k
+      (B0, (B4 i j k l))   -> Right $ D $ go6 g h i j k l
+      (B0, (B5 i j k l m)) -> Right $ D $ go7 g h i j k l m
+      ((B1 a), B0)             -> Right $ D $ go3 a g h
+{-      ((B1 a), (B1 i))         -> Right $ D $ go4 a g h i
+      ((B1 a), (B2 i j))       -> Right $ D $ go5 a g h i j
+      ((B1 a), (B3 i j k))     -> Right $ D $ go6 a g h i j k
+      ((B1 a), (B4 i j k l))   -> Right $ D $ go7 a g h i j k l-}
+      ((B1 a), (B5 i j k l m)) -> Right $ D $ go8 a g h i j k l m
+      ((B2 a b), B0)             -> Right $ D $ go4 a b g h
+{-      ((B2 a b), (B1 i))         -> Right $ D $ go5 a b g h i
+      ((B2 a b), (B2 i j))       -> Right $ D $ go6 a b g h i j
+      ((B2 a b), (B3 i j k))     -> Right $ D $ go7 a b g h i j k
+      ((B2 a b), (B4 i j k l))   -> Right $ D $ go8 a b g h i j k l-}
+      ((B2 a b), (B5 i j k l m)) -> Right $ D $ go9 a b g h i j k l m
+      ((B3 a b c), B0)             -> Right $ D $ go5 a b c g h
+{-      ((B3 a b c), (B1 i))         -> Right $ D $ go6 a b c g h i
+      ((B3 a b c), (B2 i j))       -> Right $ D $ go7 a b c g h i j
+      ((B3 a b c), (B3 i j k))     -> Right $ D $ go8 a b c g h i j k
+      ((B3 a b c), (B4 i j k l))   -> Right $ D $ go9 a b c g h i j k l-}
+      ((B3 a b c), (B5 i j k l m)) -> Right $ D $ go10 a b c g h i j k l m
+      ((B4 a b c d), B0)             -> Right $ D $ go6 a b c d g h
+{-      ((B4 a b c d), (B1 i))         -> Right $ D $ go7 a b c d g h i
+      ((B4 a b c d), (B2 i j))       -> Right $ D $ go8 a b c d g h i j
+      ((B4 a b c d), (B3 i j k))     -> Right $ D $ go9 a b c d g h i j k
+      ((B4 a b c d), (B4 i j k l))   -> Right $ D $ go10 a b c d g h i j k l-}
+      ((B4 a b c d), (B5 i j k l m)) -> Right $ D $ go11 a b c d g h i j k l m
+      ((B5 a b c d e), B0)             -> Right $ D $ go7 a b c d e g h
+      ((B5 a b c d e), (B1 i))         -> Right $ D $ go8 a b c d e g h i
+      ((B5 a b c d e), (B2 i j))       -> Right $ D $ go9 a b c d e g h i j
+      ((B5 a b c d e), (B3 i j k))     -> Right $ D $ go10 a b c d e g h i j k
+      ((B5 a b c d e), (B4 i j k l))   -> Right $ D $ go11 a b c d e g h i j k l
+      ((B5 a b c d e), (B5 i j k l m)) -> Right $ D $ go12 a b c d e g h i j k l m
+  (BSnoc B0 (P g h), BCEmpty) ->
+    case (a, b) of
+      (B0, B0)             -> Right $ D $ go2 g h
+      (B0, (B1 i))         -> Right $ D $ go3 g h i
+      (B0, (B2 i j))       -> Right $ D $ go4 g h i j
+      (B0, (B3 i j k))     -> Right $ D $ go5 g h i j k
+      (B0, (B4 i j k l))   -> Right $ D $ go6 g h i j k l
+      (B0, (B5 i j k l m)) -> Right $ D $ go7 g h i j k l m
+      ((B1 a), B0)             -> Right $ D $ go3 a g h
+{-      ((B1 a), (B1 i))         -> Right $ D $ go4 a g h i
+      ((B1 a), (B2 i j))       -> Right $ D $ go5 a g h i j
+      ((B1 a), (B3 i j k))     -> Right $ D $ go6 a g h i j k
+      ((B1 a), (B4 i j k l))   -> Right $ D $ go7 a g h i j k l-}
+      ((B1 a), (B5 i j k l m)) -> Right $ D $ go8 a g h i j k l m
+      ((B2 a b), B0)             -> Right $ D $ go4 a b g h
+{-      ((B2 a b), (B1 i))         -> Right $ D $ go5 a b g h i
+      ((B2 a b), (B2 i j))       -> Right $ D $ go6 a b g h i j
+      ((B2 a b), (B3 i j k))     -> Right $ D $ go7 a b g h i j k
+      ((B2 a b), (B4 i j k l))   -> Right $ D $ go8 a b g h i j k l-}
+      ((B2 a b), (B5 i j k l m)) -> Right $ D $ go9 a b g h i j k l m
+      ((B3 a b c), B0)             -> Right $ D $ go5 a b c g h
+{-      ((B3 a b c), (B1 i))         -> Right $ D $ go6 a b c g h i
+      ((B3 a b c), (B2 i j))       -> Right $ D $ go7 a b c g h i j
+      ((B3 a b c), (B3 i j k))     -> Right $ D $ go8 a b c g h i j k
+      ((B3 a b c), (B4 i j k l))   -> Right $ D $ go9 a b c g h i j k l-}
+      ((B3 a b c), (B5 i j k l m)) -> Right $ D $ go10 a b c g h i j k l m
+      ((B4 a b c d), B0)             -> Right $ D $ go6 a b c d g h
+{-      ((B4 a b c d), (B1 i))         -> Right $ D $ go7 a b c d g h i
+      ((B4 a b c d), (B2 i j))       -> Right $ D $ go8 a b c d g h i j
+      ((B4 a b c d), (B3 i j k))     -> Right $ D $ go9 a b c d g h i j k
+      ((B4 a b c d), (B4 i j k l))   -> Right $ D $ go10 a b c d g h i j k l-}
+      ((B4 a b c d), (B5 i j k l m)) -> Right $ D $ go11 a b c d g h i j k l m
+      ((B5 a b c d e), B0)             -> Right $ D $ go7 a b c d e g h
+      ((B5 a b c d e), (B1 i))         -> Right $ D $ go8 a b c d e g h i
+      ((B5 a b c d e), (B2 i j))       -> Right $ D $ go9 a b c d e g h i j
+      ((B5 a b c d e), (B3 i j k))     -> Right $ D $ go10 a b c d e g h i j k
+      ((B5 a b c d e), (B4 i j k l))   -> Right $ D $ go11 a b c d e g h i j k l
+      ((B5 a b c d e), (B5 i j k l m)) -> Right $ D $ go12 a b c d e g h i j k l m
+  (BSEmpty, BCEmpty) ->
+    case (a, b) of
+      (B0, B0)             -> Right $ empty
+      (B0, (B1 i))         -> Right $ D $ go1 i
+      (B0, (B2 i j))       -> Right $ D $ go2 i j
+      (B0, (B3 i j k))     -> Right $ D $ go3 i j k
+      (B0, (B4 i j k l))   -> Right $ D $ go4 i j k l
+      (B0, (B5 i j k l m)) -> Right $ D $ go5 i j k l m
+      ((B1 a), B0)             -> Right $ D $ go1 a
+{-      ((B1 a), (B1 i))         -> Right $ D $ go4 a i
+      ((B1 a), (B2 i j))       -> Right $ D $ go5 a i j
+      ((B1 a), (B3 i j k))     -> Right $ D $ go6 a i j k
+      ((B1 a), (B4 i j k l))   -> Right $ D $ go7 a i j k l-}
+      ((B1 a), (B5 i j k l m)) -> Right $ D $ go6 a i j k l m
+      ((B2 a b), B0)             -> Right $ D $ go2 a b
+{-      ((B2 a b), (B1 i))         -> Right $ D $ go5 a b i
+      ((B2 a b), (B2 i j))       -> Right $ D $ go6 a b i j
+      ((B2 a b), (B3 i j k))     -> Right $ D $ go7 a b i j k
+      ((B2 a b), (B4 i j k l))   -> Right $ D $ go8 a b i j k l-}
+      ((B2 a b), (B5 i j k l m)) -> Right $ D $ go7 a b i j k l m
+      ((B3 a b c), B0)             -> Right $ D $ go3 a b c
+{-      ((B3 a b c), (B1 i))         -> Right $ D $ go6 a b c i
+      ((B3 a b c), (B2 i j))       -> Right $ D $ go7 a b c i j
+      ((B3 a b c), (B3 i j k))     -> Right $ D $ go8 a b c i j k
+      ((B3 a b c), (B4 i j k l))   -> Right $ D $ go9 a b c i j k l-}
+      ((B3 a b c), (B5 i j k l m)) -> Right $ D $ go8 a b c i j k l m
+      ((B4 a b c d), B0)             -> Right $ D $ go4 a b c d
+{-      ((B4 a b c d), (B1 i))         -> Right $ D $ go7 a b c d i
+      ((B4 a b c d), (B2 i j))       -> Right $ D $ go8 a b c d i j
+      ((B4 a b c d), (B3 i j k))     -> Right $ D $ go9 a b c d i j k
+      ((B4 a b c d), (B4 i j k l))   -> Right $ D $ go10 a b c d i j k l-}
+      ((B4 a b c d), (B5 i j k l m)) -> Right $ D $ go9 a b c d i j k l m
+      ((B5 a b c d e), B0)             -> Right $ D $ go5 a b c d e
+      ((B5 a b c d e), (B1 i))         -> Right $ D $ go6 a b c d e i
+      ((B5 a b c d e), (B2 i j))       -> Right $ D $ go7 a b c d e i j
+      ((B5 a b c d e), (B3 i j k))     -> Right $ D $ go8 a b c d e i j k
+      ((B5 a b c d e), (B4 i j k l))   -> Right $ D $ go9 a b c d e i j k l
+      ((B5 a b c d e), (B5 i j k l m)) -> Right $ D $ go10 a b c d e i j k l m
+{-# INLINE fixRGC #-}
+
+class HasColour c where
+  colour :: p c -> ColourType c
+
+data ColourType a where
+  R' :: ColourType R
+  Y' :: ColourType Y
+  G' :: ColourType G
+
+data Proxy a where
+  Proxy :: Proxy a
+
+instance HasColour R where
+  colour _ = R'
+
+instance HasColour G where
+  colour _ = G'
+
+instance HasColour Y where
+  colour _ = Y'
+
+nodeColour :: forall c t r a b.  HasColour c => Node c t r a b -> ColourType c
+nodeColour _ = colour (Proxy :: Proxy c)
+
+stackColour :: forall c reg r a b.  HasColour c => Stack reg c r a b -> ColourType c
+stackColour _ = colour (Proxy :: Proxy c)
 
 
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
@@ -1146,6 +1335,7 @@ fixRG (NO a@B5' b@B2') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d 
 fixRG (NO a@B5' b@B3') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
 fixRG (NO a@B5' b@B4') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
 fixRG (NO a@B5' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
+{-# INLINE fixRG #-}
 
 fixRY :: Node R (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
 fixRY (NO a@B0' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
@@ -1408,7 +1598,6 @@ fixRY (NO a@B5' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
 fixRY (NO a@B5' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
 
-{-
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
 fixRY (NO a@B0' b@B1') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
@@ -1655,6 +1844,4 @@ fixRY (NO a@B5' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
--}
-
-
+{-# INLINE fixRY #-}

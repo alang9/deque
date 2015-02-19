@@ -1,4 +1,5 @@
 {-# OPTIONS -Wall #-}
+{-# OPTIONS -fno-spec-constr #-}
 {-- OPTIONS -fdefer-type-errors #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -17,63 +18,43 @@ module NonCat where
 
 import GHC.TypeLits
 
-data Colour = R | Y | G
+data Colour = R | Y | G deriving Show
 
-instance Show Colour where
-  show R = "R"
-  show Y = "Y"
-  show G = "G"
+data HasColourDict a b where
+  HCD :: (HasColour a, HasColour b) => HasColourDict a b
 
-type family MinO (a :: Nat) (b :: Nat) :: Colour where
-  MinO 0 a = R
-  MinO 5 a = R
-  MinO a 0 = R
-  MinO a 5 = R
-  MinO 1 1 = Y
-  MinO 1 2 = Y
-  MinO 1 3 = Y
-  MinO 1 4 = Y
-  MinO 2 1 = Y
-  MinO 3 1 = Y
-  MinO 4 1 = Y
-  MinO 4 2 = Y
-  MinO 4 3 = Y
-  MinO 4 4 = Y
-  MinO 2 4 = Y
-  MinO 3 4 = Y
-  MinO 2 2 = G
-  MinO 2 3 = G
-  MinO 3 2 = G
-  MinO 3 3 = G
+class MinClass (a :: Nat) (b :: Nat) where
+  type MinO a b :: Colour
+  type MinC a b :: Colour
+  getHasColour :: HasColourDict (MinO a b) (MinC a b)
 
-type family MinC (a :: Nat) (b :: Nat) :: Colour where
-  MinC 0 0 = G
-  MinC 0 1 = Y
-  MinC 0 2 = G
-  MinC 0 3 = G
-  MinC 0 4 = Y
-  MinC 1 0 = Y
-  MinC 2 0 = G
-  MinC 3 0 = G
-  MinC 4 0 = Y
-  MinC 5 a = R
-  MinC a 5 = R
-  MinC 1 1 = Y
-  MinC 1 2 = Y
-  MinC 1 3 = Y
-  MinC 1 4 = Y
-  MinC 2 1 = Y
-  MinC 3 1 = Y
-  MinC 4 1 = Y
-  MinC 4 2 = Y
-  MinC 4 3 = Y
-  MinC 4 4 = Y
-  MinC 2 4 = Y
-  MinC 3 4 = Y
-  MinC 2 2 = G
-  MinC 2 3 = G
-  MinC 3 2 = G
-  MinC 3 3 = G
+instance MinClass 5 a where type MinO 5 a = R; type MinC 5 a = R; getHasColour = HCD
+instance MinClass a 5 where type MinO a 5 = R; type MinC a 5 = R; getHasColour = HCD
+instance MinClass 0 0 where type MinO 0 0 = R; type MinC 0 0 = G; getHasColour = HCD
+instance MinClass 0 1 where type MinO 0 1 = R; type MinC 0 1 = Y; getHasColour = HCD
+instance MinClass 0 2 where type MinO 0 2 = R; type MinC 0 2 = G; getHasColour = HCD
+instance MinClass 0 3 where type MinO 0 3 = R; type MinC 0 3 = G; getHasColour = HCD
+instance MinClass 0 4 where type MinO 0 4 = R; type MinC 0 4 = Y; getHasColour = HCD
+instance MinClass 1 0 where type MinO 1 0 = R; type MinC 1 0 = Y; getHasColour = HCD
+instance MinClass 2 0 where type MinO 2 0 = R; type MinC 2 0 = G; getHasColour = HCD
+instance MinClass 3 0 where type MinO 3 0 = R; type MinC 3 0 = G; getHasColour = HCD
+instance MinClass 4 0 where type MinO 4 0 = R; type MinC 4 0 = Y; getHasColour = HCD
+instance MinClass 1 1 where type MinO 1 1 = Y; type MinC 1 1 = Y; getHasColour = HCD
+instance MinClass 1 2 where type MinO 1 2 = Y; type MinC 1 2 = Y; getHasColour = HCD
+instance MinClass 1 3 where type MinO 1 3 = Y; type MinC 1 3 = Y; getHasColour = HCD
+instance MinClass 1 4 where type MinO 1 4 = Y; type MinC 1 4 = Y; getHasColour = HCD
+instance MinClass 2 1 where type MinO 2 1 = Y; type MinC 2 1 = Y; getHasColour = HCD
+instance MinClass 3 1 where type MinO 3 1 = Y; type MinC 3 1 = Y; getHasColour = HCD
+instance MinClass 4 1 where type MinO 4 1 = Y; type MinC 4 1 = Y; getHasColour = HCD
+instance MinClass 4 2 where type MinO 4 2 = Y; type MinC 4 2 = Y; getHasColour = HCD
+instance MinClass 4 3 where type MinO 4 3 = Y; type MinC 4 3 = Y; getHasColour = HCD
+instance MinClass 4 4 where type MinO 4 4 = Y; type MinC 4 4 = Y; getHasColour = HCD
+instance MinClass 2 4 where type MinO 2 4 = Y; type MinC 2 4 = Y; getHasColour = HCD
+instance MinClass 3 4 where type MinO 3 4 = Y; type MinC 3 4 = Y; getHasColour = HCD
+instance MinClass 2 2 where type MinO 2 2 = G; type MinC 2 2 = G; getHasColour = HCD
+instance MinClass 2 3 where type MinO 2 3 = G; type MinC 2 3 = G; getHasColour = HCD
+instance MinClass 3 2 where type MinO 3 2 = G; type MinC 3 2 = G; getHasColour = HCD
+instance MinClass 3 3 where type MinO 3 3 = G; type MinC 3 3 = G; getHasColour = HCD
 
 data Buffer n r a b where
   B0 :: Buffer 0 r a a
@@ -137,8 +118,8 @@ data Pair r a b where
   P :: r b c -> r a b -> Pair r a c
 
 data Node c (t :: Genus *) r a b where
-  NO :: (HasColour (MinO c1 c2)) => Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
-  NC :: (HasColour (MinC c1 c2)) => Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) Closed r a c
+  NO :: MinClass c2 c1 => Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
+  NC :: MinClass c2 c1 => Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) Closed r a c
 
 deriving instance Show (Node c t r a b)
 
@@ -268,7 +249,7 @@ lb' (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c
 lb' (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
 lb' (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP $ l13 a b c d e f g h i j k l m
 lb' _ _ = undefined
-{-# INLINE lb' #-}
+{-- INLINE lb' #-}
 
 rb' :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBP (Up k) (Down k) r a c
 rb' (B1 (P n o)) B0                                     = uncurry RBP $ r2 n o
@@ -296,7 +277,7 @@ rb' (B2 (P n o) (P p q)) (B5 v w x y z)                 = uncurry RBP $ r9 n o p
 rb' (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o p q r s v w x y z
 rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
 rb' _ _ = undefined
-{-# INLINE rb' #-}
+{-- INLINE rb' #-}
 
 class Combine c t rem where
   type Regularity c t rem :: Regular
@@ -423,7 +404,7 @@ pre a (B1 b) = B2 a b
 pre a (B2 b c) = B3 a b c
 pre a (B3 b c d) = B4 a b c d
 pre a (B4 b c d e) = B5 a b c d e
-{-# INLINE pre #-}
+{-- INLINE pre #-}
 
 data BCons n r a c where
   BCons :: r b c -> Buffer n r a b -> BCons (n + 1) r a c
@@ -440,7 +421,7 @@ unpre (B2 a b)       = BCons a (B1 b)
 unpre (B3 a b c)     = BCons a (B2 b c)
 unpre (B4 a b c d)   = BCons a (B3 b c d)
 unpre (B5 a b c d e) = BCons a (B4 b c d e)
-{-# INLINE unpre #-}
+{-- INLINE unpre #-}
 
 unpost :: Buffer n r a c -> BSnoc n r a c
 unpost B0             = BSEmpty
@@ -449,7 +430,7 @@ unpost (B2 a b)       = BSnoc (B1 a) b
 unpost (B3 a b c)     = BSnoc (B2 a b) c
 unpost (B4 a b c d)   = BSnoc (B3 a b c) d
 unpost (B5 a b c d e) = BSnoc (B4 a b c d) e
-{-# INLINE unpost #-}
+{-- INLINE unpost #-}
 
 data Foo a b where
   F :: Int -> Foo () ()
@@ -542,7 +523,7 @@ cons a (D (SYG (SS1 (NO b@B4' e@B1')) g))      = regular $ SRG (SS1 (NO (pre a b
 cons a (D (SYG (SS1 (NO b@B4' e@B2')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
 cons a (D (SYG (SS1 (NO b@B4' e@B3')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
 cons a (D (SYG (SS1 (NO b@B4' e@B4')) g))      = regular $ SRG (SS1 (NO (pre a b) e)) g
-{-# INLINE cons #-}
+{-- INLINE cons #-}
 
 instance Reg Semi R r a b where
   regular (SR (SSC n1 (SS1 n2 ))) = case fixRGC n1 n2 of
@@ -1005,7 +986,7 @@ instance Reg Semi R r a b where
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
   regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
 -}
-  {-# INLINE regular #-}
+  {-- INLINE regular #-}
 
 
 toGorYorR :: GorY t r a b -> GorYorR t r a b
@@ -1138,7 +1119,7 @@ fixRGC n1@(NO a b) n2@(NC c d) = case (unpost c, unpre d) of
       ((B5 a b c d e), (B3 i j k))     -> Right $ D $ go8 a b c d e i j k
       ((B5 a b c d e), (B4 i j k l))   -> Right $ D $ go9 a b c d e i j k l
       ((B5 a b c d e), (B5 i j k l m)) -> Right $ D $ go10 a b c d e i j k l m
-{-# INLINE fixRGC #-}
+{-- INLINE fixRGC #-}
 
 class HasColour c where
   colour :: p c -> ColourType c
@@ -1166,8 +1147,13 @@ nodeColour _ = colour (Proxy :: Proxy c)
 stackColour :: forall c reg r a b.  HasColour c => Stack reg c r a b -> ColourType c
 stackColour _ = colour (Proxy :: Proxy c)
 
-
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
+fixRG (NO a b) (NO c d) =
+  case (lb' a c, rb' d b) of
+    (LBP e f, RBP g h) -> let n2 = (NO f g) in
+      case nodeColour n2 of
+        Y' -> GY2 (NO e h) n2
+        G' -> GG2 (NO e h) n2
 fixRG (NO a@B0' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
 fixRG (NO a@B0' b@B1') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
 fixRG (NO a@B0' b@B2') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
@@ -1335,7 +1321,7 @@ fixRG (NO a@B5' b@B2') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d 
 fixRG (NO a@B5' b@B3') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
 fixRG (NO a@B5' b@B4') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
 fixRG (NO a@B5' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-{-# INLINE fixRG #-}
+{-- INLINE fixRG #-}
 
 fixRY :: Node R (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
 fixRY (NO a@B0' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
@@ -1844,4 +1830,4 @@ fixRY (NO a@B5' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d 
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
 fixRY (NO a@B5' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-{-# INLINE fixRY #-}
+{-- INLINE fixRY #-}

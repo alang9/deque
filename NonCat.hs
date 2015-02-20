@@ -13,6 +13,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module NonCat where
 
@@ -20,41 +21,46 @@ import GHC.TypeLits
 
 data Colour = R | Y | G deriving Show
 
-data HasColourDict a b where
-  HCD :: (HasColour a, HasColour b) => HasColourDict a b
-
 class MinClass (a :: Nat) (b :: Nat) where
   type MinO a b :: Colour
   type MinC a b :: Colour
-  getHasColour :: HasColourDict (MinO a b) (MinC a b)
 
-instance MinClass 5 a where type MinO 5 a = R; type MinC 5 a = R; getHasColour = HCD
-instance MinClass a 5 where type MinO a 5 = R; type MinC a 5 = R; getHasColour = HCD
-instance MinClass 0 0 where type MinO 0 0 = R; type MinC 0 0 = G; getHasColour = HCD
-instance MinClass 0 1 where type MinO 0 1 = R; type MinC 0 1 = Y; getHasColour = HCD
-instance MinClass 0 2 where type MinO 0 2 = R; type MinC 0 2 = G; getHasColour = HCD
-instance MinClass 0 3 where type MinO 0 3 = R; type MinC 0 3 = G; getHasColour = HCD
-instance MinClass 0 4 where type MinO 0 4 = R; type MinC 0 4 = Y; getHasColour = HCD
-instance MinClass 1 0 where type MinO 1 0 = R; type MinC 1 0 = Y; getHasColour = HCD
-instance MinClass 2 0 where type MinO 2 0 = R; type MinC 2 0 = G; getHasColour = HCD
-instance MinClass 3 0 where type MinO 3 0 = R; type MinC 3 0 = G; getHasColour = HCD
-instance MinClass 4 0 where type MinO 4 0 = R; type MinC 4 0 = Y; getHasColour = HCD
-instance MinClass 1 1 where type MinO 1 1 = Y; type MinC 1 1 = Y; getHasColour = HCD
-instance MinClass 1 2 where type MinO 1 2 = Y; type MinC 1 2 = Y; getHasColour = HCD
-instance MinClass 1 3 where type MinO 1 3 = Y; type MinC 1 3 = Y; getHasColour = HCD
-instance MinClass 1 4 where type MinO 1 4 = Y; type MinC 1 4 = Y; getHasColour = HCD
-instance MinClass 2 1 where type MinO 2 1 = Y; type MinC 2 1 = Y; getHasColour = HCD
-instance MinClass 3 1 where type MinO 3 1 = Y; type MinC 3 1 = Y; getHasColour = HCD
-instance MinClass 4 1 where type MinO 4 1 = Y; type MinC 4 1 = Y; getHasColour = HCD
-instance MinClass 4 2 where type MinO 4 2 = Y; type MinC 4 2 = Y; getHasColour = HCD
-instance MinClass 4 3 where type MinO 4 3 = Y; type MinC 4 3 = Y; getHasColour = HCD
-instance MinClass 4 4 where type MinO 4 4 = Y; type MinC 4 4 = Y; getHasColour = HCD
-instance MinClass 2 4 where type MinO 2 4 = Y; type MinC 2 4 = Y; getHasColour = HCD
-instance MinClass 3 4 where type MinO 3 4 = Y; type MinC 3 4 = Y; getHasColour = HCD
-instance MinClass 2 2 where type MinO 2 2 = G; type MinC 2 2 = G; getHasColour = HCD
-instance MinClass 2 3 where type MinO 2 3 = G; type MinC 2 3 = G; getHasColour = HCD
-instance MinClass 3 2 where type MinO 3 2 = G; type MinC 3 2 = G; getHasColour = HCD
-instance MinClass 3 3 where type MinO 3 3 = G; type MinC 3 3 = G; getHasColour = HCD
+instance MinClass 5 0 where type MinO 5 0 = R; type MinC 5 0 = R
+instance MinClass 5 1 where type MinO 5 1 = R; type MinC 5 1 = R
+instance MinClass 5 2 where type MinO 5 2 = R; type MinC 5 2 = R
+instance MinClass 5 3 where type MinO 5 3 = R; type MinC 5 3 = R
+instance MinClass 5 4 where type MinO 5 4 = R; type MinC 5 4 = R
+instance MinClass 5 5 where type MinO 5 5 = R; type MinC 5 5 = R
+instance MinClass 4 5 where type MinO 4 5 = R; type MinC 4 5 = R
+instance MinClass 3 5 where type MinO 3 5 = R; type MinC 3 5 = R
+instance MinClass 2 5 where type MinO 2 5 = R; type MinC 2 5 = R
+instance MinClass 1 5 where type MinO 1 5 = R; type MinC 1 5 = R
+instance MinClass 0 5 where type MinO 0 5 = R; type MinC 0 5 = R
+instance MinClass 0 0 where type MinO 0 0 = R; type MinC 0 0 = G
+instance MinClass 0 1 where type MinO 0 1 = R; type MinC 0 1 = Y
+instance MinClass 0 2 where type MinO 0 2 = R; type MinC 0 2 = G
+instance MinClass 0 3 where type MinO 0 3 = R; type MinC 0 3 = G
+instance MinClass 0 4 where type MinO 0 4 = R; type MinC 0 4 = Y
+instance MinClass 1 0 where type MinO 1 0 = R; type MinC 1 0 = Y
+instance MinClass 2 0 where type MinO 2 0 = R; type MinC 2 0 = G
+instance MinClass 3 0 where type MinO 3 0 = R; type MinC 3 0 = G
+instance MinClass 4 0 where type MinO 4 0 = R; type MinC 4 0 = Y
+instance MinClass 1 1 where type MinO 1 1 = Y; type MinC 1 1 = Y
+instance MinClass 1 2 where type MinO 1 2 = Y; type MinC 1 2 = Y
+instance MinClass 1 3 where type MinO 1 3 = Y; type MinC 1 3 = Y
+instance MinClass 1 4 where type MinO 1 4 = Y; type MinC 1 4 = Y
+instance MinClass 2 1 where type MinO 2 1 = Y; type MinC 2 1 = Y
+instance MinClass 3 1 where type MinO 3 1 = Y; type MinC 3 1 = Y
+instance MinClass 4 1 where type MinO 4 1 = Y; type MinC 4 1 = Y
+instance MinClass 4 2 where type MinO 4 2 = Y; type MinC 4 2 = Y
+instance MinClass 4 3 where type MinO 4 3 = Y; type MinC 4 3 = Y
+instance MinClass 4 4 where type MinO 4 4 = Y; type MinC 4 4 = Y
+instance MinClass 2 4 where type MinO 2 4 = Y; type MinC 2 4 = Y
+instance MinClass 3 4 where type MinO 3 4 = Y; type MinC 3 4 = Y
+instance MinClass 2 2 where type MinO 2 2 = G; type MinC 2 2 = G
+instance MinClass 2 3 where type MinO 2 3 = G; type MinC 2 3 = G
+instance MinClass 3 2 where type MinO 3 2 = G; type MinC 3 2 = G
+instance MinClass 3 3 where type MinO 3 3 = G; type MinC 3 3 = G
 
 data Buffer n r a b where
   B0 :: Buffer 0 r a a
@@ -118,8 +124,84 @@ data Pair r a b where
   P :: r b c -> r a b -> Pair r a c
 
 data Node c (t :: Genus *) r a b where
-  NO :: MinClass c2 c1 => Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
-  NC :: MinClass c2 c1 => Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) Closed r a c
+  NO :: HasColour (MinO c1 c2) => Buffer c1 r c d -> Buffer c2 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
+  NC :: HasColour (MinC c1 c2) => Buffer c1 r b c -> Buffer c2 r a b -> Node (MinC c1 c2) Closed r a c
+
+toNO :: Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
+toNO a@B0' b@B0' = NO a b
+toNO a@B0' b@B1' = NO a b
+toNO a@B0' b@B2' = NO a b
+toNO a@B0' b@B3' = NO a b
+toNO a@B0' b@B4' = NO a b
+toNO a@B0' b@B5' = NO a b
+toNO a@B1' b@B0' = NO a b
+toNO a@B1' b@B1' = NO a b
+toNO a@B1' b@B2' = NO a b
+toNO a@B1' b@B3' = NO a b
+toNO a@B1' b@B4' = NO a b
+toNO a@B1' b@B5' = NO a b
+toNO a@B2' b@B0' = NO a b
+toNO a@B2' b@B1' = NO a b
+toNO a@B2' b@B2' = NO a b
+toNO a@B2' b@B3' = NO a b
+toNO a@B2' b@B4' = NO a b
+toNO a@B2' b@B5' = NO a b
+toNO a@B3' b@B0' = NO a b
+toNO a@B3' b@B1' = NO a b
+toNO a@B3' b@B2' = NO a b
+toNO a@B3' b@B3' = NO a b
+toNO a@B3' b@B4' = NO a b
+toNO a@B3' b@B5' = NO a b
+toNO a@B4' b@B0' = NO a b
+toNO a@B4' b@B1' = NO a b
+toNO a@B4' b@B2' = NO a b
+toNO a@B4' b@B3' = NO a b
+toNO a@B4' b@B4' = NO a b
+toNO a@B4' b@B5' = NO a b
+toNO a@B5' b@B0' = NO a b
+toNO a@B5' b@B1' = NO a b
+toNO a@B5' b@B2' = NO a b
+toNO a@B5' b@B3' = NO a b
+toNO a@B5' b@B4' = NO a b
+toNO a@B5' b@B5' = NO a b
+
+toNC :: Buffer c2 r b c -> Buffer c1 r a b -> Node (MinC c1 c2) Closed r a c
+toNC a@B0' b@B0' = NC a b
+toNC a@B0' b@B1' = NC a b
+toNC a@B0' b@B2' = NC a b
+toNC a@B0' b@B3' = NC a b
+toNC a@B0' b@B4' = NC a b
+toNC a@B0' b@B5' = NC a b
+toNC a@B1' b@B0' = NC a b
+toNC a@B1' b@B1' = NC a b
+toNC a@B1' b@B2' = NC a b
+toNC a@B1' b@B3' = NC a b
+toNC a@B1' b@B4' = NC a b
+toNC a@B1' b@B5' = NC a b
+toNC a@B2' b@B0' = NC a b
+toNC a@B2' b@B1' = NC a b
+toNC a@B2' b@B2' = NC a b
+toNC a@B2' b@B3' = NC a b
+toNC a@B2' b@B4' = NC a b
+toNC a@B2' b@B5' = NC a b
+toNC a@B3' b@B0' = NC a b
+toNC a@B3' b@B1' = NC a b
+toNC a@B3' b@B2' = NC a b
+toNC a@B3' b@B3' = NC a b
+toNC a@B3' b@B4' = NC a b
+toNC a@B3' b@B5' = NC a b
+toNC a@B4' b@B0' = NC a b
+toNC a@B4' b@B1' = NC a b
+toNC a@B4' b@B2' = NC a b
+toNC a@B4' b@B3' = NC a b
+toNC a@B4' b@B4' = NC a b
+toNC a@B4' b@B5' = NC a b
+toNC a@B5' b@B0' = NC a b
+toNC a@B5' b@B1' = NC a b
+toNC a@B5' b@B2' = NC a b
+toNC a@B5' b@B3' = NC a b
+toNC a@B5' b@B4' = NC a b
+toNC a@B5' b@B5' = NC a b
 
 deriving instance Show (Node c t r a b)
 
@@ -249,7 +331,7 @@ lb' (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c
 lb' (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
 lb' (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP $ l13 a b c d e f g h i j k l m
 lb' _ _ = undefined
-{-- INLINE lb' #-}
+{-# INLINE lb' #-}
 
 rb' :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBP (Up k) (Down k) r a c
 rb' (B1 (P n o)) B0                                     = uncurry RBP $ r2 n o
@@ -277,7 +359,7 @@ rb' (B2 (P n o) (P p q)) (B5 v w x y z)                 = uncurry RBP $ r9 n o p
 rb' (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o p q r s v w x y z
 rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
 rb' _ _ = undefined
-{-- INLINE rb' #-}
+{-# INLINE rb' #-}
 
 class Combine c t rem where
   type Regularity c t rem :: Regular
@@ -577,62 +659,6 @@ instance Reg Semi R r a b where
       GY3 a b -> D $ combine2 a b (YG ss s)
       GR3 a b -> D $ combine2 a b (YG ss s)
 
-{-
-  regular (SR (SS1 (NC B0 B0))) = undefined
-  regular (SR (SS1 (NC B0 (B1 _)))) = undefined
-  regular (SR (SS1 (NC B0 (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC B0 (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC B0 (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) B0))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B1 _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B2 _ _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B3 _ _ _) (B4 _ _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) B0))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B1 _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B2 _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B3 _ _ _)))) = undefined
-  regular (SR (SS1 (NC (B4 _ _ _ _) (B4 _ _ _ _)))) = undefined-}
-  {-
-  regular (SR (SSC (NO (B1 _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B1 _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B2 _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B3 _ _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B1 _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B2 _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B3 _ _ _)) _)) = undefined
-  regular (SR (SSC (NO (B4 _ _ _ _) (B4 _ _ _ _)) _)) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC B0 (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B2 _ _) (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) B0)))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B2 _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B3 _ _ _) (B3 _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC _ (B5 _ _ _ _ _))))) = undefined
-  regular (SR (SSC (NO _ _) (SS1 (NC (B5 _ _ _ _ _) _)))) = undefined
--}
-
   regular (SR (SS1 (NC (B5 a b c d e) B0)))             = D $ go5 a b c d e
   regular (SR (SS1 (NC B0 (B5 a b c d e))))             = D $ go5 a b c d e
   regular (SR (SS1 (NC (B5 a b c d e) (B1 f))))         = D $ go6 a b c d e f
@@ -644,348 +670,6 @@ instance Reg Semi R r a b where
   regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j))))     = D $ SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B2 a b) (B5 f g h i j))))       = D $ SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B1 a) (B5 f g h i j))))         = D $ SG (SS1 (NC (B3 a f g) (B3 h i j)))
-
-{-
-  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B1 (P a b)))))) = go2 a b
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) B0)))) = go2 a b
-  regular (SR (SSC (NO B0 B0) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B2 e f)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go4 a b i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go6 a b i j k l
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go8 a b i j k l m n
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go10 a b i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go6 a b c d i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go8 a b c d e f i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go10 a b c d e f g h i j
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go12 a b c d e f g h i j k l
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go14 a b c d e f g h i j k l m n
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b c d i j k l m n o p
-  regular (SR (SSC (NO B0 B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B3 a b k) B0))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B3 a b k) B0))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC B0 (B4 (P a b) c d (P e f)))))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 (B1 k)) (SS1 (NC (B4 (P a b) c d (P e f)) B0)))) = SG (SSC (NO (B2 a b) (B3 e f k)) (SS1 (NC (B1 c) (B1 d))))
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 a b i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 a b i j k l q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 a b i j k l m n q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 a b i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 a b c d i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 a b c d e f i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 a b c d e f g h i j q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 a b c d e f g h i j k l q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 a b c d e f g h i j k l m n q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f g h i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b c d i j k l m n o p q
-  regular (SR (SSC (NO B0 (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d e f i j k l m n o p q
-
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B2 k l)))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B2 k l)))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B2 k l)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B2 k l)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 a b i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 a b i j k l q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 a b i j k l m n q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 a b i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 a b c d i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 a b c d e f i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 a b c d e f g h i j q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 a b c d e f g h i j k l q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 a b c d e f g h i j k l m n q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f g h i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b c d i j k l m n o p q r
-  regular (SR (SSC (NO B0 (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d e f i j k l m n o p q r
-
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B1 (P a b)))))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B1 (P a b)) B0)))) = SG (SS1 (NC (B2 a b) (B3 k l m)))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC B0 (B4 (P a b) c d e))))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B3 k l m)) (SS1 (NC (B4 (P a b) c d e) B0)))) = SG (SSC (NO (B2 a b) (B3 k l m)) (SS1 (NC (B1 c) (B2 d e))))
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 a b i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 a b i j k l q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 a b i j k l m n q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 a b i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 a b c d i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 a b c d e f i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 a b c d e f g h i j q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 a b c d e f g h i j k l q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 a b c d e f g h i j k l m n q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f g h i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b c d i j k l m n o p q r s
-  regular (SR (SSC (NO B0 (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d e f i j k l m n o p q r s
-
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B1 (P a b)))))) = go6 a b k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B1 (P a b)) B0)))) = go6 a b k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 a b c d e f g h k l m n
-  regular (SR (SSC (NO B0 (B4 k l m n)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 a b c d e f g h k l m n
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 a b i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 a b i j k l q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 a b i j k l m n q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 a b i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 a b c d i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 a b c d e f i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 a b c d e f g h i j q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 a b c d e f g h i j k l q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 a b c d e f g h i j k l m n q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 a b c d e f g h i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 a b c d i j k l m n o p q r s t
-  regular (SR (SSC (NO B0 (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 a b c d e f i j k l m n o p q r s t
-
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go7 a b k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go7 a b k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 a b c d e f g h k l m n o
-  regular (SR (SSC (NO B0 (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 a b c d e f g h k l m n o
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 a b i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 a b i j k l q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 a b i j k l m n q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 a b c d i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 a b c d e f i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO B0 (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B1 (P a b)))))) = go3 k a b
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B1 (P a b)) B0)))) = go3 k a b
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go9 k a b c d e f g h
-  regular (SR (SSC (NO (B1 k) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go9 k a b c d e f g h
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go5 v a b i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go7 v a b i j k l
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go9 v a b i j k l m n
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go11 v a b i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go7 v a b c d i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go9 v a b c d e f i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go11 v a b c d e f g h i j
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go13 v a b c d e f g h i j k l
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go15 v a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v a b c d i j k l m n o p
-  regular (SR (SSC (NO (B1 v) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B1 (P a b)))))) = go4 k l a b
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B1 (P a b)) B0)))) = go4 k l a b
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go10 k l a b c d e f g h
-  regular (SR (SSC (NO (B2 k l) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go10 k l a b c d e f g h
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go6 v w a b i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go8 v w a b i j k l
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go10 v w a b i j k l m n
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go12 v w a b i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go8 v w a b c d i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go10 v w a b c d e f i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go12 v w a b c d e f g h i j
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go14 v w a b c d e f g h i j k l
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w a b c d i j k l m n o p
-  regular (SR (SSC (NO (B2 v w) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B1 (P a b)))))) = go5 k l m a b
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B1 (P a b)) B0)))) = go5 k l m a b
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go11 k l m a b c d e f g h
-  regular (SR (SSC (NO (B3 k l m) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go11 k l m a b c d e f g h
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go7 v w x a b i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go9 v w x a b i j k l
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go11 v w x a b i j k l m n
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go13 v w x a b i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go9 v w x a b c d i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go11 v w x a b c d e f i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go13 v w x a b c d e f g h i j
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go15 v w x a b c d e f g h i j k l
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x a b c d i j k l m n o p
-  regular (SR (SSC (NO (B3 v w x) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B1 (P a b)))))) = go6 k l m n a b
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B1 (P a b)) B0)))) = go6 k l m n a b
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go12 k l m n a b c d e f g h
-  regular (SR (SSC (NO (B4 k l m n) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go12 k l m n a b c d e f g h
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go8 v w x y a b i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go10 v w x y a b i j k l
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go12 v w x y a b i j k l m n
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go14 v w x y a b i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go10 v w x y a b c d i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go12 v w x y a b c d e f i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go14 v w x y a b c d e f g h i j
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go16 v w x y a b c d e f g h i j k l
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y a b c d i j k l m n o p
-  regular (SR (SSC (NO (B4 v w x y) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B1 (P a b)))))) = go7 k l m n o a b
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B1 (P a b)) B0)))) = go7 k l m n o a b
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go13 k l m n o a b c d e f g h
-  regular (SR (SSC (NO (B5 k l m n o) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go13 k l m n o a b c d e f g h
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go9 v w x y z a b i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go11 v w x y z a b i j k l
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go13 v w x y z a b i j k l m n
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go15 v w x y z a b i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go11 v w x y z a b c d i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go13 v w x y z a b c d e f i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go15 v w x y z a b c d e f g h i j
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go17 v w x y z a b c d e f g h i j k l
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go19 v w x y z a b c d e f g h i j k l m n
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f g h i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b c d i j k l m n o p
-  regular (SR (SSC (NO (B5 v w x y z) B0) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d e f i j k l m n o p
-
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B1 (P a b)))))) = go8 k l m n o a b p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B1 (P a b)) B0)))) = go8 k l m n o a b p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 k l m n o a b c d e f g h p
-  regular (SR (SSC (NO (B5 k l m n o) (B1 p)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 k l m n o a b c d e f g h p
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v w x y z a b i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v w x y z a b i j k l q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v w x y z a b i j k l m n q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v w x y z a b i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v w x y z a b c d i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v w x y z a b c d e f i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v w x y z a b c d e f g h i j q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v w x y z a b c d e f g h i j k l q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v w x y z a b c d e f g h i j k l m n q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f g h i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b c d i j k l m n o p q
-  regular (SR (SSC (NO (B5 v w x y z) (B1 q)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d e f i j k l m n o p q
-
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B1 (P a b)))))) = go9 k l m n o a b p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B1 (P a b)) B0)))) = go9 k l m n o a b p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 k l m n o a b c d e f g h p q
-  regular (SR (SSC (NO (B5 k l m n o) (B2 p q)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 k l m n o a b c d e f g h p q
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w x y z a b i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w x y z a b i j k l q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w x y z a b i j k l m n q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w x y z a b i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w x y z a b c d i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w x y z a b c d e f i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w x y z a b c d e f g h i j q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w x y z a b c d e f g h i j k l q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w x y z a b c d e f g h i j k l m n q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f g h i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b c d i j k l m n o p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B2 q r)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d e f i j k l m n o p q r
-
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B1 (P a b)))))) = go10 k l m n o a b p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B1 (P a b)) B0)))) = go10 k l m n o a b p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 k l m n o a b c d e f g h p q r
-  regular (SR (SSC (NO (B5 k l m n o) (B3 p q r)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 k l m n o a b c d e f g h p q r
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x y z a b i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x y z a b i j k l q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x y z a b i j k l m n q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x y z a b i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x y z a b c d i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x y z a b c d e f i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x y z a b c d e f g h i j q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x y z a b c d e f g h i j k l q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x y z a b c d e f g h i j k l m n q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f g h i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b c d i j k l m n o p q r s
-  regular (SR (SSC (NO (B5 v w x y z) (B3 q r s)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d e f i j k l m n o p q r s
-
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B1 (P a b)))))) = go11 k l m n o a b p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B1 (P a b)) B0)))) = go11 k l m n o a b p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 k l m n o a b c d e f g h p q r t
-  regular (SR (SSC (NO (B5 k l m n o) (B4 p q r t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 k l m n o a b c d e f g h p q r t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y z a b i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y z a b i j k l q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y z a b i j k l m n q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y z a b i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y z a b c d i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y z a b c d e f i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y z a b c d e f g h i j q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y z a b c d e f g h i j k l q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y z a b c d e f g h i j k l m n q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y z a b c d e f g h i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y z a b c d i j k l m n o p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B4 q r s t)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y z a b c d e f i j k l m n o p q r s t
-
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B1 (P a b)))))) = go12 k l m n o a b p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B1 (P a b)) B0)))) = go12 k l m n o a b p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go18 k l m n o a b c d e f g h p q r s t
-  regular (SR (SSC (NO (B5 k l m n o) (B5 p q r s t)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go18 k l m n o a b c d e f g h p q r s t
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go14 v w x y z a b i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go16 v w x y z a b i j k l q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go18 v w x y z a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x y z a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go16 v w x y z a b c d i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go18 v w x y z a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go20 v w x y z a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go22 v w x y z a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go24 v w x y z a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go26 v w x y z a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x y z a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B5 v w x y z) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x y z a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go8 p a b k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go8 p a b k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go14 p a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B1 p) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go14 p a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go10 v a b i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go12 v a b i j k l q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go14 v a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go16 v a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go12 v a b c d i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go14 v a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go16 v a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go18 v a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go20 v a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B1 v) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go9 p q a b k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go9 p q a b k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go15 p q a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B2 p q) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go15 p q a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go11 v w a b i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go13 v w a b i j k l q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go15 v w a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go17 v w a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go13 v w a b c d i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go15 v w a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go17 v w a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go19 v w a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go21 v w a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B2 v w) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go10 p q r a b k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go10 p q r a b k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go16 p q r a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B3 p q r) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go16 p q r a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go12 v w x a b i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go14 v w x a b i j k l q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go16 v w x a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go18 v w x a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go14 v w x a b c d i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go16 v w x a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go18 v w x a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go20 v w x a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go22 v w x a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go24 v w x a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go20 v w x a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B3 v w x) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go22 v w x a b c d e f i j k l m n o p q r s t u
-
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B1 (P a b)))))) = go11 p q r s a b k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B1 (P a b)) B0)))) = go11 p q r s a b k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC B0 (B4 (P a b) (P c d) (P e f) (P g h)))))) = go17 p q r s a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B4 p q r s) (B5 k l m n o)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) B0)))) = go17 p q r s a b c d e f g h k l m n o
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B1 (P i j)))))) = go13 v w x y a b i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B2 (P i j) (P k l)))))) = go15 v w x y a b i j k l q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B3 (P i j) (P k l) (P m n)))))) = go17 v w x y a b i j k l m n q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B1 (P a b)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go19 v w x y a b i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B1 (P i j)))))) = go15 v w x y a b c d i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B1 (P i j)))))) = go17 v w x y a b c d e f i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B1 (P i j)))))) = go19 v w x y a b c d e f g h i j q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B2 (P i j) (P k l)))))) = go21 v w x y a b c d e f g h i j k l q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B3 (P i j) (P k l) (P m n)))))) = go23 v w x y a b c d e f g h i j k l m n q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B4 (P a b) (P c d) (P e f) (P g h)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go25 v w x y a b c d e f g h i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B2 (P a b) (P c d)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go21 v w x y a b c d i j k l m n o p q r s t u
-  regular (SR (SSC (NO (B4 v w x y) (B5 q r s t u)) (SS1 (NC (B3 (P a b) (P c d) (P e f)) (B4 (P i j) (P k l) (P m n) (P o p)))))) = go23 v w x y a b c d e f i j k l m n o p q r s t u
--}
   {-- INLINE regular #-}
 
 
@@ -1150,684 +834,41 @@ stackColour _ = colour (Proxy :: Proxy c)
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
 fixRG (NO a b) (NO c d) =
   case (lb' a c, rb' d b) of
-    (LBP e f, RBP g h) -> let n2 = (NO f g) in
-      case nodeColour n2 of
-        Y' -> GY2 (NO e h) n2
-        G' -> GG2 (NO e h) n2
-fixRG (NO a@B0' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B1') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B2') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B3') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B4') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B0') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B1') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B2') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B3') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B4') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B5') (NO c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-
-fixRG (NO a@B0' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B1') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B2') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B3') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B4') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B0') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B1') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B2') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B3') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B4') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B5') (NO c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-
-fixRG (NO a@B0' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B1') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B2') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B3') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B4') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B0') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B1') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B2') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B3') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B4') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B5') (NO c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-
-fixRG (NO a@B0' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B1') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B2') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B3') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B4') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B0' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B1' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B2' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NO f g)
-fixRG (NO a@B3' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B4' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B0') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B1') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B2') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B3') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B4') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-fixRG (NO a@B5' b@B5') (NO c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NO f g)
-
-fixRG (NO a@B0' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B1') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B2') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B3') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B4') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B0') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B1') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B2') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B3') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B4') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B5') (NC c@B2' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-
-fixRG (NO a@B0' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B1') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B2') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B3') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B4') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B0') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B1') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B2') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B3') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B4') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B5') (NC c@B2' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-
-fixRG (NO a@B0' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B1') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B2') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B3') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B4') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B0') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B1') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B2') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B3') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B4') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B5') (NC c@B3' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-
-fixRG (NO a@B0' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B1') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B2') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B3') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B4') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B0' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B1' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B2' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG2 (NO e h) (NC f g)
-fixRG (NO a@B3' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B4' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B0') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B1') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B2') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B3') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B4') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-fixRG (NO a@B5' b@B5') (NC c@B3' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY2 (NO e h) (NC f g)
-{-- INLINE fixRG #-}
+    (LBP e f, RBP g h) ->
+      let n2 = toNO f g in
+      let n1 = toNO e h in
+      case (n1, n2) of
+        (NO _ _, NO _ _) -> case (nodeColour n1, nodeColour n2) of
+          (G', Y') -> GY2 n1 n2
+          (G', G') -> GG2 n1 n2
+fixRG (NO a b) (NC c d) =
+  case (lb' a c, rb' d b) of
+    (LBP e f, RBP g h) ->
+      let n2 = toNC f g in
+      let n1 = toNO e h in
+      case (n1, n2) of
+        (NO _ _, NC _ _) -> case (nodeColour n1, nodeColour n2) of
+          (G', Y') -> GY2 n1 n2
+          (G', G') -> GG2 n1 n2
 
 fixRY :: Node R (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
-fixRY (NO a@B0' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B1') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B1') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B2') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B2') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B3') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B3') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B4') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B4') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B0' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B1' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-
-fixRY (NO a@B1' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B1' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B2' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-
-fixRY (NO a@B2' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B2' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B3' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-
-fixRY (NO a@B3' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B3' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B4' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B4' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B4' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B0') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B0') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B1') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B1') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B2') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B2') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B3') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B3') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B4') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B4') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B5' b@B5') (NO c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-fixRY (NO a@B5' b@B5') (NO c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NO f g)
-
-fixRY (NO a@B0' b@B1') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B1') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-
-fixRY (NO a@B0' b@B2') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B2') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-
-fixRY (NO a@B0' b@B3') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B3') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-
-fixRY (NO a@B0' b@B4') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B4') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B0' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B0' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B1' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-
-fixRY (NO a@B1' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B1' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B2' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-
-fixRY (NO a@B2' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B2' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B3' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-
-fixRY (NO a@B3' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B3' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B4' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B4' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B4' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B0') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B0') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B1') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B1') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B2') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B2') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B3') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B3') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B4') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B4') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-
-fixRY (NO a@B5' b@B5') (NC c@B1' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B1' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B1' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B1' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B2' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GG3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B2' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B3' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GY3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B3' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B4' d@B1') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B4' d@B2') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B4' d@B3') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-fixRY (NO a@B5' b@B5') (NC c@B4' d@B4') = case lb' a c of LBP e f -> case rb' d b of RBP g h -> GR3 (NO e h) (NC f g)
-{-- INLINE fixRY #-}
+fixRY (NO a b) (NO c d) =
+  case (lb' a c, rb' d b) of
+    (LBP e f, RBP g h) ->
+      let n2 = toNO f g in
+      let n1 = toNO e h in
+      case (n1, n2) of
+        (NO _ _, NO _ _) -> case (nodeColour n1, nodeColour n2) of
+          (G', Y') -> GY3 n1 n2
+          (G', G') -> GG3 n1 n2
+          (G', R') -> GR3 n1 n2
+fixRY (NO a b) (NC c d) =
+  case (lb' a c, rb' d b) of
+    (LBP e f, RBP g h) ->
+      let n2 = toNC f g in
+      let n1 = toNO e h in
+      case (n1, n2) of
+        (NO _ _, NC _ _) -> case (nodeColour n1, nodeColour n2) of
+          (G', Y') -> GY3 n1 n2
+          (G', G') -> GG3 n1 n2
+          (G', R') -> GR3 n1 n2

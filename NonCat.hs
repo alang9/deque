@@ -1,3 +1,4 @@
+-- | Type-aligned non-catenable deque, based on the work of Kaplan and Tarjan
 {-# OPTIONS -Wall #-}
 {-# OPTIONS -fno-spec-constr #-}
 {-- OPTIONS -fdefer-type-errors #-}
@@ -20,6 +21,34 @@ module NonCat where
 import GHC.TypeLits
 
 data Colour = R | Y | G deriving Show
+
+class IsColour c where
+  colour :: p c -> ColourOf c
+
+data ColourOf a where
+  R' :: ColourOf R
+  Y' :: ColourOf Y
+  G' :: ColourOf G
+
+data Proxy a where
+  Proxy :: Proxy a
+
+instance IsColour R where
+  colour _ = R'
+
+instance IsColour G where
+  colour _ = G'
+
+instance IsColour Y where
+  colour _ = Y'
+
+nodeColour :: forall c t r a b.  IsColour c => Node c t r a b -> ColourOf c
+nodeColour _ = colour (Proxy :: Proxy c)
+{-# INLINE nodeColour #-}
+
+stackColour :: forall c reg r a b.  IsColour c => Stack reg c r a b -> ColourOf c
+stackColour _ = colour (Proxy :: Proxy c)
+{-# INLINE stackColour #-}
 
 class MinClass (a :: Nat) (b :: Nat) where
   type MinO a b :: Colour
@@ -62,6 +91,25 @@ instance MinClass 2 3 where type MinO 2 3 = G; type MinC 2 3 = G
 instance MinClass 3 2 where type MinO 3 2 = G; type MinC 3 2 = G
 instance MinClass 3 3 where type MinO 3 3 = G; type MinC 3 3 = G
 
+infixr 5 :|
+data View l r a c where
+  Empty :: View l r a a
+  (:|) :: l b c -> r a b -> View l r a c
+
+class Uncons t where
+  uncons :: t r a b -> View r (t r) a b
+
+class Unsnoc t where
+  unsnoc :: t r a b -> View (t r) r a b
+
+infixr 5 <|
+class Cons t where
+  (<|) :: r b c -> t r a b -> t r a c
+
+infixl 5 |>
+class Snoc t where
+  (|>) :: t r b c -> r a b -> t r a c
+
 data Buffer n r a b where
   B0 :: Buffer 0 r a a
   B1 :: r a b -> Buffer 1 r a b
@@ -69,14 +117,6 @@ data Buffer n r a b where
   B3 :: r c d -> r b c -> r a b -> Buffer 3 r a d
   B4 :: r d e -> r c d -> r b c -> r a b -> Buffer 4 r a e
   B5 :: r e f -> r d e -> r c d -> r b c -> r a b -> Buffer 5 r a f
-
-instance Show (Buffer n r a b) where
-  show B0' = "B0"
-  show B1' = "B1"
-  show B2' = "B2"
-  show B3' = "B3"
-  show B4' = "B4"
-  show B5' = "B5"
 
 type family Up (n :: Nat) :: Nat where
   Up 0  = 0
@@ -124,8 +164,8 @@ data Pair r a b where
   P :: r b c -> r a b -> Pair r a c
 
 data Node c (t :: Genus *) r a b where
-  NO :: HasColour (MinO c1 c2) => Buffer c1 r c d -> Buffer c2 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
-  NC :: HasColour (MinC c1 c2) => Buffer c1 r b c -> Buffer c2 r a b -> Node (MinC c1 c2) Closed r a c
+  NO :: IsColour (MinO c1 c2) => Buffer c1 r c d -> Buffer c2 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
+  NC :: IsColour (MinC c1 c2) => Buffer c1 r b c -> Buffer c2 r a b -> Node (MinC c1 c2) Closed r a c
 
 toNO :: Buffer c2 r c d -> Buffer c1 r a b -> Node (MinO c1 c2) (Open (Pair r) b c) r a d
 toNO a@B0' b@B0' = NO a b
@@ -205,13 +245,9 @@ toNC a@B5' b@B4' = NC a b
 toNC a@B5' b@B5' = NC a b
 {-# INLINE toNC #-}
 
-deriving instance Show (Node c t r a b)
-
 data SubStack c (t :: Genus *) r a b where
   SS1 :: Node c1 t r a b -> SubStack c1 t r a b
   SSC :: Node c1 (Open (Pair r) a b) r c d -> SubStack Y t (Pair r) a b -> SubStack c1 t r c d
-
-deriving instance Show (SubStack c t r a b)
 
 data Regular = Full | Semi
 
@@ -225,27 +261,20 @@ data Stack reg c1 r a b where
   SGR :: SubStack G (Open t c d) r a b -> Stack Semi R t c d -> Stack Full G r a b
   SGG :: SubStack G (Open t c d) r a b -> Stack Full G t c d -> Stack Full G r a b
 
+-- For debugging
+instance Show (Buffer n r a b) where
+  show B0' = "B0"
+  show B1' = "B1"
+  show B2' = "B2"
+  show B3' = "B3"
+  show B4' = "B4"
+  show B5' = "B5"
+
+deriving instance Show (Node c t r a b)
+
+deriving instance Show (SubStack c t r a b)
+
 deriving instance Show (Stack c t r a b)
-
-class Reg reg c1 r a b where
-  regular :: Stack reg c1 r a b -> Deque r a b
-
-type family RegCol (c :: Colour) :: Colour where
-  RegCol R = G
-  RegCol Y = Y
-  RegCol G = G
-
-instance Reg Full G r a b where
-  regular = D
-
-instance Reg Full Y r a b where
-  regular = D
-
-instance Reg Semi Y r a b where
-  regular (SYR foo bar) =
-    case regular bar of
-      D baz -> case stackColour baz of
-        G' -> D $ SYG foo baz
 
 go1 a = SY (SS1 (NC (B1 a) B0))
 go2 a b = SG (SS1 (NC (B2 a b) B0))
@@ -303,65 +332,75 @@ r11 a b c d e f g h i j k = (B4 (P a b) (P c d) (P e f) (P g h), B3 i j k)
 r12 a b c d e f g h i j k l = (B5 (P a b) (P c d) (P e f) (P g h) (P i j), B2 k l)
 r13 a b c d e f g h i j k l m = (B5 (P a b) (P c d) (P e f) (P g h) (P i j), B3 k l m)
 
-lb' :: (k ~ (n + 2 * m)) => Buffer n r b c -> Buffer m (Pair r) a b -> LBP (Up k) (Down k) r a c
-lb' B0 (B1 (P f g))                                     = uncurry LBP $ l2 f g
-lb' B0 (B2 (P f g) (P h i))                             = uncurry LBP $ l4 f g h i
-lb' B0 (B3 (P f g) (P h i) (P j k))                     = uncurry LBP $ l6 f g h i j k
-lb' B0 (B4 (P f g) (P h i) (P j k) (P l m))             = uncurry LBP $ l8 f g h i j k l m
-lb' (B1 a) (B1 (P f g))                                 = uncurry LBP $ l3 a f g
-lb' (B1 a) (B2 (P f g) (P h i))                         = uncurry LBP $ l5 a f g h i
-lb' (B1 a) (B3 (P f g) (P h i) (P j k))                 = uncurry LBP $ l7 a f g h i j k
-lb' (B1 a) (B4 (P f g) (P h i) (P j k) (P l m))         = uncurry LBP $ l9 a f g h i j k l m
-lb' (B2 a b) B0                                         = uncurry LBP $ l2 a b
-lb' (B2 a b) (B1 (P f g))                               = uncurry LBP $ l4 a b f g
-lb' (B2 a b) (B2 (P f g) (P h i))                       = uncurry LBP $ l6 a b f g h i
-lb' (B2 a b) (B3 (P f g) (P h i) (P j k))               = uncurry LBP $ l8 a b f g h i j k
-lb' (B2 a b) (B4 (P f g) (P h i) (P j k) (P l m))       = uncurry LBP $ l10 a b f g h i j k l m
-lb' (B3 a b c) B0                                       = uncurry LBP $ l3 a b c
-lb' (B3 a b c) (B1 (P f g))                             = uncurry LBP $ l5 a b c f g
-lb' (B3 a b c) (B2 (P f g) (P h i))                     = uncurry LBP $ l7 a b c f g h i
-lb' (B3 a b c) (B3 (P f g) (P h i) (P j k))             = uncurry LBP $ l9 a b c f g h i j k
-lb' (B3 a b c) (B4 (P f g) (P h i) (P j k) (P l m))     = uncurry LBP $ l11 a b c f g h i j k l m
-lb' (B4 a b c d) B0                                     = uncurry LBP $ l4 a b c d
-lb' (B4 a b c d) (B1 (P f g))                           = uncurry LBP $ l6 a b c d f g
-lb' (B4 a b c d) (B2 (P f g) (P h i))                   = uncurry LBP $ l8 a b c d f g h i
-lb' (B4 a b c d) (B3 (P f g) (P h i) (P j k))           = uncurry LBP $ l10 a b c d f g h i j k
-lb' (B4 a b c d) (B4 (P f g) (P h i) (P j k) (P l m))   = uncurry LBP $ l12 a b c d f g h i j k l m
-lb' (B5 a b c d e) B0                                   = uncurry LBP $ l5 a b c d e
-lb' (B5 a b c d e) (B1 (P f g))                         = uncurry LBP $ l7 a b c d e f g
-lb' (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c d e f g h i
-lb' (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
-lb' (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP $ l13 a b c d e f g h i j k l m
-lb' _ _ = undefined
-{-# INLINE lb' #-}
+-- | Split two stacked left buffers into an upper and lower part
+lb :: (k ~ (n + 2 * m)) => Buffer n r b c -> Buffer m (Pair r) a b -> LBP (Up k) (Down k) r a c
+lb B0 B0                                               = uncurry LBP $ l0
+lb B0 (B1 (P f g))                                     = uncurry LBP $ l2 f g
+lb B0 (B2 (P f g) (P h i))                             = uncurry LBP $ l4 f g h i
+lb B0 (B3 (P f g) (P h i) (P j k))                     = uncurry LBP $ l6 f g h i j k
+lb B0 (B4 (P f g) (P h i) (P j k) (P l m))             = uncurry LBP $ l8 f g h i j k l m
+lb (B1 a) B0                                           = uncurry LBP $ l1 a
+lb (B1 a) (B1 (P f g))                                 = uncurry LBP $ l3 a f g
+lb (B1 a) (B2 (P f g) (P h i))                         = uncurry LBP $ l5 a f g h i
+lb (B1 a) (B3 (P f g) (P h i) (P j k))                 = uncurry LBP $ l7 a f g h i j k
+lb (B1 a) (B4 (P f g) (P h i) (P j k) (P l m))         = uncurry LBP $ l9 a f g h i j k l m
+lb (B2 a b) B0                                         = uncurry LBP $ l2 a b
+lb (B2 a b) (B1 (P f g))                               = uncurry LBP $ l4 a b f g
+lb (B2 a b) (B2 (P f g) (P h i))                       = uncurry LBP $ l6 a b f g h i
+lb (B2 a b) (B3 (P f g) (P h i) (P j k))               = uncurry LBP $ l8 a b f g h i j k
+lb (B2 a b) (B4 (P f g) (P h i) (P j k) (P l m))       = uncurry LBP $ l10 a b f g h i j k l m
+lb (B3 a b c) B0                                       = uncurry LBP $ l3 a b c
+lb (B3 a b c) (B1 (P f g))                             = uncurry LBP $ l5 a b c f g
+lb (B3 a b c) (B2 (P f g) (P h i))                     = uncurry LBP $ l7 a b c f g h i
+lb (B3 a b c) (B3 (P f g) (P h i) (P j k))             = uncurry LBP $ l9 a b c f g h i j k
+lb (B3 a b c) (B4 (P f g) (P h i) (P j k) (P l m))     = uncurry LBP $ l11 a b c f g h i j k l m
+lb (B4 a b c d) B0                                     = uncurry LBP $ l4 a b c d
+lb (B4 a b c d) (B1 (P f g))                           = uncurry LBP $ l6 a b c d f g
+lb (B4 a b c d) (B2 (P f g) (P h i))                   = uncurry LBP $ l8 a b c d f g h i
+lb (B4 a b c d) (B3 (P f g) (P h i) (P j k))           = uncurry LBP $ l10 a b c d f g h i j k
+lb (B4 a b c d) (B4 (P f g) (P h i) (P j k) (P l m))   = uncurry LBP $ l12 a b c d f g h i j k l m
+lb (B5 a b c d e) B0                                   = uncurry LBP $ l5 a b c d e
+lb (B5 a b c d e) (B1 (P f g))                         = uncurry LBP $ l7 a b c d e f g
+lb (B5 a b c d e) (B2 (P f g) (P h i))                 = uncurry LBP $ l9 a b c d e f g h i
+lb (B5 a b c d e) (B3 (P f g) (P h i) (P j k))         = uncurry LBP $ l11 a b c d e f g h i j k
+lb (B5 a b c d e) (B4 (P f g) (P h i) (P j k) (P l m)) = uncurry LBP $ l13 a b c d e f g h i j k l m
+lb B5' B5'                                             = undefined
+{-# INLINE lb #-}
 
-rb' :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBP (Up k) (Down k) r a c
-rb' (B1 (P n o)) B0                                     = uncurry RBP $ r2 n o
-rb' (B2 (P n o) (P p q)) B0                             = uncurry RBP $ r4 n o p q
-rb' (B3 (P n o) (P p q) (P r s)) B0                     = uncurry RBP $ r6 n o p q r s
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) B0             = uncurry RBP $ r8 n o p q r s t u
-rb' (B1 (P n o)) (B1 v)                                 = uncurry RBP $ r3 n o v
-rb' (B2 (P n o) (P p q)) (B1 v)                         = uncurry RBP $ r5 n o p q v
-rb' (B3 (P n o) (P p q) (P r s)) (B1 v)                 = uncurry RBP $ r7 n o p q r s v
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B1 v)         = uncurry RBP $ r9 n o p q r s t u v
-rb' (B1 (P n o)) (B2 v w)                               = uncurry RBP $ r4 n o v w
-rb' (B2 (P n o) (P p q)) (B2 v w)                       = uncurry RBP $ r6 n o p q v w
-rb' (B3 (P n o) (P p q) (P r s)) (B2 v w)               = uncurry RBP $ r8 n o p q r s v w
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B2 v w)       = uncurry RBP $ r10 n o p q r s t u v w
-rb' (B1 (P n o)) (B3 v w x)                             = uncurry RBP $ r5 n o v w x
-rb' (B2 (P n o) (P p q)) (B3 v w x)                     = uncurry RBP $ r7 n o p q v w x
-rb' (B3 (P n o) (P p q) (P r s)) (B3 v w x)             = uncurry RBP $ r9 n o p q r s v w x
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B3 v w x)     = uncurry RBP $ r11 n o p q r s t u v w x
-rb' (B1 (P n o)) (B4 v w x y)                           = uncurry RBP $ r6 n o v w x y
-rb' (B2 (P n o) (P p q)) (B4 v w x y)                   = uncurry RBP $ r8 n o p q v w x y
-rb' (B3 (P n o) (P p q) (P r s)) (B4 v w x y)           = uncurry RBP $ r10 n o p q r s v w x y
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B4 v w x y)   = uncurry RBP $ r12 n o p q r s t u v w x y
-rb' (B1 (P n o)) (B5 v w x y z)                         = uncurry RBP $ r7 n o v w x y z
-rb' (B2 (P n o) (P p q)) (B5 v w x y z)                 = uncurry RBP $ r9 n o p q v w x y z
-rb' (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o p q r s v w x y z
-rb' (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
-rb' _ _ = undefined
-{-# INLINE rb' #-}
+-- | Split two stacked right buffers into an upper and lower part
+rb :: (k ~ (n + 2 * m)) => Buffer m (Pair r) b c -> Buffer n r a b -> RBP (Up k) (Down k) r a c
+rb B0 B0                                               = uncurry RBP $ r0
+rb (B1 (P n o)) B0                                     = uncurry RBP $ r2 n o
+rb (B2 (P n o) (P p q)) B0                             = uncurry RBP $ r4 n o p q
+rb (B3 (P n o) (P p q) (P r s)) B0                     = uncurry RBP $ r6 n o p q r s
+rb (B4 (P n o) (P p q) (P r s) (P t u)) B0             = uncurry RBP $ r8 n o p q r s t u
+rb B0 (B1 v)                                           = uncurry RBP $ r1 v
+rb (B1 (P n o)) (B1 v)                                 = uncurry RBP $ r3 n o v
+rb (B2 (P n o) (P p q)) (B1 v)                         = uncurry RBP $ r5 n o p q v
+rb (B3 (P n o) (P p q) (P r s)) (B1 v)                 = uncurry RBP $ r7 n o p q r s v
+rb (B4 (P n o) (P p q) (P r s) (P t u)) (B1 v)         = uncurry RBP $ r9 n o p q r s t u v
+rb (B0) (B2 v w)                                       = uncurry RBP $ r2 v w
+rb (B1 (P n o)) (B2 v w)                               = uncurry RBP $ r4 n o v w
+rb (B2 (P n o) (P p q)) (B2 v w)                       = uncurry RBP $ r6 n o p q v w
+rb (B3 (P n o) (P p q) (P r s)) (B2 v w)               = uncurry RBP $ r8 n o p q r s v w
+rb (B4 (P n o) (P p q) (P r s) (P t u)) (B2 v w)       = uncurry RBP $ r10 n o p q r s t u v w
+rb B0 (B3 v w x)                                       = uncurry RBP $ r3 v w x
+rb (B1 (P n o)) (B3 v w x)                             = uncurry RBP $ r5 n o v w x
+rb (B2 (P n o) (P p q)) (B3 v w x)                     = uncurry RBP $ r7 n o p q v w x
+rb (B3 (P n o) (P p q) (P r s)) (B3 v w x)             = uncurry RBP $ r9 n o p q r s v w x
+rb (B4 (P n o) (P p q) (P r s) (P t u)) (B3 v w x)     = uncurry RBP $ r11 n o p q r s t u v w x
+rb (B0) (B4 v w x y)                                   = uncurry RBP $ r4 v w x y
+rb (B1 (P n o)) (B4 v w x y)                           = uncurry RBP $ r6 n o v w x y
+rb (B2 (P n o) (P p q)) (B4 v w x y)                   = uncurry RBP $ r8 n o p q v w x y
+rb (B3 (P n o) (P p q) (P r s)) (B4 v w x y)           = uncurry RBP $ r10 n o p q r s v w x y
+rb (B4 (P n o) (P p q) (P r s) (P t u)) (B4 v w x y)   = uncurry RBP $ r12 n o p q r s t u v w x y
+rb B0 (B5 v w x y z)                                   = uncurry RBP $ r5 v w x y z
+rb (B1 (P n o)) (B5 v w x y z)                         = uncurry RBP $ r7 n o v w x y z
+rb (B2 (P n o) (P p q)) (B5 v w x y z)                 = uncurry RBP $ r9 n o p q v w x y z
+rb (B3 (P n o) (P p q) (P r s)) (B5 v w x y z)         = uncurry RBP $ r11 n o p q r s v w x y z
+rb (B4 (P n o) (P p q) (P r s) (P t u)) (B5 v w x y z) = uncurry RBP $ r13 n o p q r s t u v w x y z
+rb B5' B5'                                             = undefined
+{-# INLINE rb #-}
 
 class Combine r c rem where
   type Regularity c rem :: Regular
@@ -499,11 +538,9 @@ data GorYorR t r a b where
   GG3 :: Node G (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorYorR t r a b
   GY3 :: Node G (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
   GR3 :: Node G (Open (Pair r) c d) r a b -> Node R t (Pair r) c d -> GorYorR t r a b
-  G3 :: Node G Closed r a b -> GorYorR Closed r a b
-  Y3 :: Node Y Closed r a b -> GorYorR Closed r a b
 
 data Deque r a b where
-  D :: HasColour c => Stack Full c r a b -> Deque r a b
+  D :: IsColour c => Stack Full c r a b -> Deque r a b
 
 deriving instance Show (Deque r a b)
 
@@ -549,6 +586,9 @@ instance Show (Foo a b) where
 
 empty :: Deque r a a
 empty = D $ SG (SS1 (NC B0 B0))
+
+instance Cons Deque where
+  (<|) = cons
 
 cons :: r b c -> Deque r a b -> Deque r a c
 cons a (D (SG (SSC (NO b e) f))) =
@@ -623,61 +663,177 @@ cons a (D (SYG (SS1 (NO b e)) s)) =
       R' -> regular $ combine n1 s
 {-# INLINE cons #-}
 
-combine2 a b = combine a . combine b
-{-# INLINE combine2 #-}
+instance Unsnoc Deque where
+  unsnoc (D (SG (SSC (NO b e) f))) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 f) :| q
+            Y' -> regular (combine n1 f) :| q
+            R' -> regular (combine n1 f) :| q
+  unsnoc (D (SG (SS1 (NC b e)))) =
+    case unpost e of
+      BSEmpty -> case unpost b of
+        BSEmpty -> Empty
+        BSnoc r s -> let n2 = toNC r B0 in
+          case n2 of
+            NC _ _ -> case nodeColour n2 of
+              G' -> regular (combine n2 CL) :| s
+              Y' -> regular (combine n2 CL) :| s
+              R' -> regular (combine n2 CL) :| s
+      BSnoc p q ->
+        let n1 = toNC b p in
+        case n1 of
+          NC _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 CL) :| q
+            Y' -> regular (combine n1 CL) :| q
+            R' -> regular (combine n1 CL) :| q
+  unsnoc (D (SY (SSC (NO b e) f))) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 f) :| q
+            Y' -> regular (combine n1 f) :| q
+            R' -> regular (combine n1 f) :| q
+  unsnoc (D (SY (SS1 (NC b e)))) =
+    case unpost e of
+      BSEmpty -> case unpost b of
+        BSnoc r s -> let n2 = toNC r B0 in
+          case n2 of
+            NC _ _ -> case nodeColour n2 of
+              G' -> regular (combine n2 CL) :| s
+              Y' -> regular (combine n2 CL) :| s
+              R' -> regular (combine n2 CL) :| s
+      BSnoc p q ->
+        let n1 = toNC b p in
+        case n1 of
+          NC _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 CL) :| q
+            Y' -> regular (combine n1 CL) :| q
+            R' -> regular (combine n1 CL) :| q
+  unsnoc (D (SGG (SSC (NO b e) f) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 (YG f s)) :| q
+            Y' -> regular (combine n1 (YG f s)) :| q
+            R' -> regular (combine n1 (YG f s)) :| q
+  unsnoc (D (SGG (SS1 (NO b e)) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 s) :| q
+            Y' -> regular (combine n1 s) :| q
+            R' -> regular (combine n1 s) :| q
+  unsnoc (D (SGR (SSC (NO b e) f) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 (YR f s)) :| q
+            Y' -> regular (combine n1 (YR f s)) :| q
+            R' -> error "Impossible"
+  unsnoc (D (SGR (SS1 (NO b e)) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 s) :| q
+            Y' -> regular (combine n1 s) :| q
+            R' -> error "Impossible"
+  unsnoc (D (SYG (SSC (NO b e) f) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 (YG f s)) :| q
+            Y' -> regular (combine n1 (YG f s)) :| q
+            R' -> regular (combine n1 (YG f s)) :| q
+  unsnoc (D (SYG (SS1 (NO b e)) s)) =
+    case unpost e of
+      BSnoc p q ->
+        let n1 = toNO b p in
+        case n1 of
+          NO _ _ -> case nodeColour n1 of
+            G' -> regular (combine n1 s) :| q
+            Y' -> regular (combine n1 s) :| q
+            R' -> regular (combine n1 s) :| q
+  {-# INLINE unsnoc #-}
+
+class Reg reg c1 r a b where
+  regular :: Stack reg c1 r a b -> Deque r a b
+
+instance Reg Full G r a b where
+  regular = D
+
+instance Reg Full Y r a b where
+  regular = D
+
+instance Reg Semi Y r a b where
+  regular (SYR foo bar) =
+    case regular bar of
+      D baz -> case stackColour baz of
+        G' -> D $ SYG foo baz
 
 instance Reg Semi R r a b where
   regular (SR (SSC n1 (SS1 n2 ))) = case fixRGC n1 n2 of
     Left goryorr -> case goryorr of
-      GG3 a b -> D $ combine2 a b CL
-      GY3 a b -> D $ combine2 a b CL
-      GR3 a b -> D $ combine2 a b CL
+      GG3 a b -> D $ combine a $ combine b CL
+      GY3 a b -> D $ combine a $ combine b CL
+      GR3 a b -> D $ combine a $ combine b CL
     Right d -> d
-  regular (SR (SSC n1@(NO _ _) (SS1 n2@(NC _ _)))) =
-    case fixRY n1 n2 of
-      GG3 a b -> D $ combine2 a b CL
-      GY3 a b -> D $ combine2 a b CL
-      GR3 a b -> D $ combine2 a b CL
-  regular (SRG (SS1 n1@(NO _ _)) (SG (SS1 n2@(NC _ _)))) =
-    case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b CL
-      GY2 a b -> D $ combine2 a b CL
+  regular (SRG (SS1 n1@(NO _ _)) (SG (SS1 n2@(NC _ _)))) = case fixRGC n1 n2 of
+    Left goryorr -> case goryorr of
+      GG3 a b -> D $ combine a $ combine b CL
+      GY3 a b -> D $ combine a $ combine b CL
+      GR3 a b -> D $ combine a $ combine b CL
+    Right d -> d
   regular (SR (SSC n1 (SSC n2 ss))) =
     case fixRY n1 n2 of
-      GG3 a b -> D $ combine2 a b ss
-      GY3 a b -> D $ combine2 a b ss
-      GR3 a b -> D $ combine2 a b ss
+      GG3 a b -> D $ combine a $ combine b ss
+      GY3 a b -> D $ combine a $ combine b ss
+      GR3 a b -> D $ combine a $ combine b ss
   regular (SRG (SS1 n1@(NO _ _)) (SG (SSC n2@(NO _ _) ss))) =
     case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b ss
-      GY2 a b -> D $ combine2 a b ss
+      GG2 a b -> D $ combine a $ combine b ss
+      GY2 a b -> D $ combine a $ combine b ss
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b s
-      GY2 a b -> D $ combine2 a b s
+      GG2 a b -> D $ combine a $ combine b s
+      GY2 a b -> D $ combine a $ combine b s
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SS1 n2@(NO _ _)) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b s
-      GY2 a b -> D $ combine2 a b s
+      GG2 a b -> D $ combine a $ combine b s
+      GY2 a b -> D $ combine a $ combine b s
   regular (SRG (SS1 n1@(NO _ _)) (SGR (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b (YR ss s)
-      GY2 a b -> D $ combine2 a b (YR ss s)
+      GG2 a b -> D $ combine a $ combine b (YR ss s)
+      GY2 a b -> D $ combine a $ combine b (YR ss s)
   regular (SRG (SS1 n1@(NO _ _)) (SGG (SSC n2@(NO _ _) ss) s)) =
     case fixRG n1 n2 of
-      GG2 a b -> D $ combine2 a b (YG ss s)
-      GY2 a b -> D $ combine2 a b (YG ss s)
+      GG2 a b -> D $ combine a $ combine b (YG ss s)
+      GY2 a b -> D $ combine a $ combine b (YG ss s)
   regular (SRG (SSC n1@(NO _ _) (SS1 n2@(NO _ _))) s) =
     case fixRY n1 n2 of
-      GG3 a b -> D $ combine2 a b s
-      GY3 a b -> D $ combine2 a b s
-      GR3 a b -> D $ combine2 a b s
+      GG3 a b -> D $ combine a $ combine b s
+      GY3 a b -> D $ combine a $ combine b s
+      GR3 a b -> D $ combine a $ combine b s
   regular (SRG (SSC n1@(NO _ _) (SSC n2@(NO _ _) ss)) s) =
     case fixRY n1 n2 of
-      GG3 a b -> D $ combine2 a b (YG ss s)
-      GY3 a b -> D $ combine2 a b (YG ss s)
-      GR3 a b -> D $ combine2 a b (YG ss s)
-
+      GG3 a b -> D $ combine a $ combine b (YG ss s)
+      GY3 a b -> D $ combine a $ combine b (YG ss s)
+      GR3 a b -> D $ combine a $ combine b (YG ss s)
   regular (SR (SS1 (NC (B5 a b c d e) B0)))             = D $ go5 a b c d e
   regular (SR (SS1 (NC B0 (B5 a b c d e))))             = D $ go5 a b c d e
   regular (SR (SS1 (NC (B5 a b c d e) (B1 f))))         = D $ go6 a b c d e f
@@ -689,13 +845,13 @@ instance Reg Semi R r a b where
   regular (SR (SS1 (NC (B3 a b c) (B5 f g h i j))))     = D $ SG (SSC (NO (B3 a b c) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B2 a b) (B5 f g h i j))))       = D $ SG (SSC (NO (B2 a b) (B3 h i j)) (SS1 (NC B0 (B1 (P f g)))))
   regular (SR (SS1 (NC (B1 a) (B5 f g h i j))))         = D $ SG (SS1 (NC (B3 a f g) (B3 h i j)))
-  {-# INLINE regular #-}
-
+  {-- INLINE regular #-}
 
 toGorYorR :: GorY t r a b -> GorYorR t r a b
-toGorYorR = undefined
+toGorYorR (GG2 a b) = GG3 a b
+toGorYorR (GY2 a b) = GY3 a b
 
-fixRGC :: HasColour k => Node R (Open (Pair r) c d) r a b -> Node k t (Pair r) c d -> Either (GorYorR t r a b) (Deque r a b)
+fixRGC :: IsColour k => Node R (Open (Pair r) c d) r a b -> Node k t (Pair r) c d -> Either (GorYorR t r a b) (Deque r a b)
 fixRGC n1@(NO a b) n2@(NC c d) = case (unpost c, unpre d) of
   (BSnoc e f, BCons g h) -> Left $ case nodeColour n2 of
     G' -> toGorYorR $ fixRG n1 n2
@@ -824,37 +980,9 @@ fixRGC n1@(NO a b) n2@(NC c d) = case (unpost c, unpre d) of
       ((B5 a b c d e), (B5 i j k l m)) -> Right $ D $ go10 a b c d e i j k l m
 {-# INLINE fixRGC #-}
 
-class HasColour c where
-  colour :: p c -> ColourType c
-
-data ColourType a where
-  R' :: ColourType R
-  Y' :: ColourType Y
-  G' :: ColourType G
-
-data Proxy a where
-  Proxy :: Proxy a
-
-instance HasColour R where
-  colour _ = R'
-
-instance HasColour G where
-  colour _ = G'
-
-instance HasColour Y where
-  colour _ = Y'
-
-nodeColour :: forall c t r a b.  HasColour c => Node c t r a b -> ColourType c
-nodeColour _ = colour (Proxy :: Proxy c)
-{-# INLINE nodeColour #-}
-
-stackColour :: forall c reg r a b.  HasColour c => Stack reg c r a b -> ColourType c
-stackColour _ = colour (Proxy :: Proxy c)
-{-# INLINE stackColour #-}
-
 fixRG :: Node R (Open (Pair r) c d) r a b -> Node G t (Pair r) c d -> GorY t r a b
 fixRG (NO a b) (NO c d) =
-  case (lb' a c, rb' d b) of
+  case (lb a c, rb d b) of
     (LBP e f, RBP g h) ->
       let n2 = toNO f g in
       let n1 = toNO e h in
@@ -863,7 +991,7 @@ fixRG (NO a b) (NO c d) =
           (G', Y') -> GY2 n1 n2
           (G', G') -> GG2 n1 n2
 fixRG (NO a b) (NC c d) =
-  case (lb' a c, rb' d b) of
+  case (lb a c, rb d b) of
     (LBP e f, RBP g h) ->
       let n2 = toNC f g in
       let n1 = toNO e h in
@@ -875,7 +1003,7 @@ fixRG (NO a b) (NC c d) =
 
 fixRY :: Node R (Open (Pair r) c d) r a b -> Node Y t (Pair r) c d -> GorYorR t r a b
 fixRY (NO a b) (NO c d) =
-  case (lb' a c, rb' d b) of
+  case (lb a c, rb d b) of
     (LBP e f, RBP g h) ->
       let n2 = toNO f g in
       let n1 = toNO e h in
@@ -885,7 +1013,7 @@ fixRY (NO a b) (NO c d) =
           (G', G') -> GG3 n1 n2
           (G', R') -> GR3 n1 n2
 fixRY (NO a b) (NC c d) =
-  case (lb' a c, rb' d b) of
+  case (lb a c, rb d b) of
     (LBP e f, RBP g h) ->
       let n2 = toNC f g in
       let n1 = toNO e h in

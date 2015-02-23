@@ -4,7 +4,6 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -30,12 +29,12 @@ data Buffer u v w x y z q i j where
   B5 :: !(q m n) -> !(q l m) -> !(q k l) -> !(q j k) -> !(q i j) -> Buffer F F F F F T q i n
 
 instance Show (Buffer u v w x y z q i j) where
-  show B0' = "B0"
-  show B1' = "B1"
-  show B2' = "B2"
-  show B3' = "B3"
-  show B4' = "B4"
-  show B5' = "B5"
+  show B0{} = "B0"
+  show B1{} = "B1"
+  show B2{} = "B2"
+  show B3{} = "B3"
+  show B4{} = "B4"
+  show B5{} = "B5"
 
 data Pair q i k where
   P :: !(q j k) -> !(q i j) -> Pair q i k
@@ -134,13 +133,6 @@ data Deque q i j where
 
 deriving instance Show (Deque q i j)
 
-pattern B0' <- B0
-pattern B1' <- B1 _
-pattern B2' <- B2 _ _
-pattern B3' <- B3 _ _ _
-pattern B4' <- B4 _ _ _ _
-pattern B5' <- B5 _ _ _ _ _
-
 {-
 type family Col u v w x y z a b c d e f where
   Col u F F F F z a b c d e f = Red
@@ -150,42 +142,42 @@ type family Col u v w x y z a b c d e f where
   Col F F w x F F F F c d F F = Green-}
 
 toFringe :: (r ~ (u || z || a || f), ye ~ (Not r && (v || y || b || e)), g ~ (Not r && Not ye)) => Buffer u v w x y z q k l -> Buffer a b c d e f q i j -> Fringe r ye g q i j k l
-toFringe a@B0' b@B0' = RX a b
-toFringe a@B0' b@B1' = RX a b
-toFringe a@B0' b@B2' = RX a b
-toFringe a@B0' b@B3' = RX a b
-toFringe a@B0' b@B4' = RX a b
-toFringe a@B0' b@B5' = RX a b
-toFringe a@B5' b@B0' = RX a b
-toFringe a@B5' b@B1' = RX a b
-toFringe a@B5' b@B2' = RX a b
-toFringe a@B5' b@B3' = RX a b
-toFringe a@B5' b@B4' = RX a b
-toFringe a@B5' b@B5' = RX a b
-toFringe a@B1' b@B0' = XR a b
-toFringe a@B2' b@B0' = XR a b
-toFringe a@B3' b@B0' = XR a b
-toFringe a@B4' b@B0' = XR a b
-toFringe a@B1' b@B5' = XR a b
-toFringe a@B2' b@B5' = XR a b
-toFringe a@B3' b@B5' = XR a b
-toFringe a@B4' b@B5' = XR a b
-toFringe a@B1' b@B1' = YX a b
-toFringe a@B1' b@B2' = YX a b
-toFringe a@B1' b@B3' = YX a b
-toFringe a@B1' b@B4' = YX a b
-toFringe a@B4' b@B1' = YX a b
-toFringe a@B4' b@B2' = YX a b
-toFringe a@B4' b@B3' = YX a b
-toFringe a@B4' b@B4' = YX a b
-toFringe a@B2' b@B1' = GY a b
-toFringe a@B2' b@B4' = GY a b
-toFringe a@B3' b@B1' = GY a b
-toFringe a@B3' b@B4' = GY a b
-toFringe a@B2' b@B2' = GG a b
-toFringe a@B2' b@B2' = GG a b
-toFringe a@B3' b@B3' = GG a b
-toFringe a@B3' b@B3' = GG a b
+toFringe a@B0{} b@B0{} = RX a b
+toFringe a@B0{} b@B1{} = RX a b
+toFringe a@B0{} b@B2{} = RX a b
+toFringe a@B0{} b@B3{} = RX a b
+toFringe a@B0{} b@B4{} = RX a b
+toFringe a@B0{} b@B5{} = RX a b
+toFringe a@B5{} b@B0{} = RX a b
+toFringe a@B5{} b@B1{} = RX a b
+toFringe a@B5{} b@B2{} = RX a b
+toFringe a@B5{} b@B3{} = RX a b
+toFringe a@B5{} b@B4{} = RX a b
+toFringe a@B5{} b@B5{} = RX a b
+toFringe a@B1{} b@B0{} = XR a b
+toFringe a@B2{} b@B0{} = XR a b
+toFringe a@B3{} b@B0{} = XR a b
+toFringe a@B4{} b@B0{} = XR a b
+toFringe a@B1{} b@B5{} = XR a b
+toFringe a@B2{} b@B5{} = XR a b
+toFringe a@B3{} b@B5{} = XR a b
+toFringe a@B4{} b@B5{} = XR a b
+toFringe a@B1{} b@B1{} = YX a b
+toFringe a@B1{} b@B2{} = YX a b
+toFringe a@B1{} b@B3{} = YX a b
+toFringe a@B1{} b@B4{} = YX a b
+toFringe a@B4{} b@B1{} = YX a b
+toFringe a@B4{} b@B2{} = YX a b
+toFringe a@B4{} b@B3{} = YX a b
+toFringe a@B4{} b@B4{} = YX a b
+toFringe a@B2{} b@B1{} = GY a b
+toFringe a@B2{} b@B4{} = GY a b
+toFringe a@B3{} b@B1{} = GY a b
+toFringe a@B3{} b@B4{} = GY a b
+toFringe a@B2{} b@B2{} = GG a b
+toFringe a@B2{} b@B2{} = GG a b
+toFringe a@B3{} b@B3{} = GG a b
+toFringe a@B3{} b@B3{} = GG a b
 {-- INLINE toFringe #-}
 
 combine :: ((r && r') ~ F) => Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
@@ -207,32 +199,32 @@ combine f@(GG _ _) ls@(BigG _ _ _) = BigG f N ls
 combine f@(YX _ _) ls@(BigR _ _ _) = BigY f N ls
 combine f@(GY _ _) ls@(BigR _ _ _) = BigY f N ls
 combine f@(GG _ _) ls@(BigR _ _ _) = BigG f N ls
-combine f@(RX _ _) (TinyL b@B1') = BigR f (Y1 b) Empty
-combine f@(RX _ _) (TinyH b@B4') = BigR f (Y1 b) Empty
-combine f@(RX _ _) g@(TinyH B3') = BigR f N g
-combine f@(RX _ _) g@(TinyL B2') = BigR f N g
-combine f@(XR _ _) (TinyL b@B1') = BigR f (Y1 b) Empty
-combine f@(XR _ _) (TinyH b@B4') = BigR f (Y1 b) Empty
-combine f@(XR _ _) g@(TinyH B3') = BigR f N g
-combine f@(XR _ _) g@(TinyL B2') = BigR f N g
-combine f@(YX _ _) ls@(TinyL B0') = BigY f N ls
-combine f@(YX _ _) ls@(TinyH B5') = BigY f N ls
-combine f@(YX _ _) ls@(TinyL B2') = BigY f N ls
-combine f@(YX _ _) ls@(TinyH B3') = BigY f N ls
-combine f@(YX _ _) (TinyL b@B1') = BigY f (Y1 b) Empty
-combine f@(YX _ _) (TinyH b@B4') = BigY f (Y1 b) Empty
-combine f@(GY _ _) ls@(TinyL B0') = BigY f N ls
-combine f@(GY _ _) ls@(TinyH B5') = BigY f N ls
-combine f@(GY _ _) ls@(TinyL B2') = BigY f N ls
-combine f@(GY _ _) ls@(TinyH B3') = BigY f N ls
-combine f@(GY _ _) (TinyL b@B1') = BigY f (Y1 b) Empty
-combine f@(GY _ _) (TinyH b@B4') = BigY f (Y1 b) Empty
-combine f@(GG _ _) ls@(TinyL B0') = BigG f N ls
-combine f@(GG _ _) ls@(TinyH B5') = BigG f N ls
-combine f@(GG _ _) ls@(TinyL B2') = BigG f N ls
-combine f@(GG _ _) ls@(TinyH B3') = BigG f N ls
-combine f@(GG _ _) (TinyL b@B1') = BigG f (Y1 b) Empty
-combine f@(GG _ _) (TinyH b@B4') = BigG f (Y1 b) Empty
+combine f@(RX _ _) (TinyL b@B1{}) = BigR f (Y1 b) Empty
+combine f@(RX _ _) (TinyH b@B4{}) = BigR f (Y1 b) Empty
+combine f@(RX _ _) g@(TinyH B3{}) = BigR f N g
+combine f@(RX _ _) g@(TinyL B2{}) = BigR f N g
+combine f@(XR _ _) (TinyL b@B1{}) = BigR f (Y1 b) Empty
+combine f@(XR _ _) (TinyH b@B4{}) = BigR f (Y1 b) Empty
+combine f@(XR _ _) g@(TinyH B3{}) = BigR f N g
+combine f@(XR _ _) g@(TinyL B2{}) = BigR f N g
+combine f@(YX _ _) ls@(TinyL B0{}) = BigY f N ls
+combine f@(YX _ _) ls@(TinyH B5{}) = BigY f N ls
+combine f@(YX _ _) ls@(TinyL B2{}) = BigY f N ls
+combine f@(YX _ _) ls@(TinyH B3{}) = BigY f N ls
+combine f@(YX _ _) (TinyL b@B1{}) = BigY f (Y1 b) Empty
+combine f@(YX _ _) (TinyH b@B4{}) = BigY f (Y1 b) Empty
+combine f@(GY _ _) ls@(TinyL B0{}) = BigY f N ls
+combine f@(GY _ _) ls@(TinyH B5{}) = BigY f N ls
+combine f@(GY _ _) ls@(TinyL B2{}) = BigY f N ls
+combine f@(GY _ _) ls@(TinyH B3{}) = BigY f N ls
+combine f@(GY _ _) (TinyL b@B1{}) = BigY f (Y1 b) Empty
+combine f@(GY _ _) (TinyH b@B4{}) = BigY f (Y1 b) Empty
+combine f@(GG _ _) ls@(TinyL B0{}) = BigG f N ls
+combine f@(GG _ _) ls@(TinyH B5{}) = BigG f N ls
+combine f@(GG _ _) ls@(TinyL B2{}) = BigG f N ls
+combine f@(GG _ _) ls@(TinyH B3{}) = BigG f N ls
+combine f@(GG _ _) (TinyL b@B1{}) = BigG f (Y1 b) Empty
+combine f@(GG _ _) (TinyH b@B4{}) = BigG f (Y1 b) Empty
 combine f@(RX _ _) ls@(BigG _ _ _) = BigR f N ls
 combine f@(XR _ _) ls@(BigG _ _ _) = BigR f N ls
 combine f@(YX _ _) ls@(BigG _ _ _) = BigY f N ls
@@ -259,12 +251,12 @@ splitFringe = undefined
 -}
 
 toTiny :: (r ~ (a || f), ye ~ (Not r && (b || e)), g ~ (Not r && Not ye)) => Buffer a b c d e f q i j -> Level r ye g q i j
-toTiny b@B0' = TinyL b
-toTiny b@B1' = TinyL b
-toTiny b@B2' = TinyL b
-toTiny b@B3' = TinyH b
-toTiny b@B4' = TinyH b
-toTiny b@B5' = TinyH b
+toTiny b@B0{} = TinyL b
+toTiny b@B1{} = TinyL b
+toTiny b@B2{} = TinyL b
+toTiny b@B3{} = TinyH b
+toTiny b@B4{} = TinyH b
+toTiny b@B5{} = TinyH b
 {-# INLINE toTiny #-}
 
 popL :: Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
@@ -272,43 +264,43 @@ popL Empty = LEmpty
 popL (TinyH _) = LEmpty
 popL (TinyL _) = LEmpty
 popL (BigG f N ls@Empty) = LGY f ls
-popL (BigG f N ls@(TinyH B5')) = LR f ls
-popL (BigG f N ls@(TinyL B0')) = LR f ls
-popL (BigG f N ls@(TinyH B3')) = LGY f ls
-popL (BigG f N ls@(TinyL B2')) = LGY f ls
+popL (BigG f N ls@(TinyH B5{})) = LR f ls
+popL (BigG f N ls@(TinyL B0{})) = LR f ls
+popL (BigG f N ls@(TinyH B3{})) = LGY f ls
+popL (BigG f N ls@(TinyL B2{})) = LGY f ls
 popL (BigG f N ls@(BigR _ _ _)) = LR f ls
 popL (BigG f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigG f (Y1 b) Empty) = LGY f (toTiny b)
 popL (BigG f (Y y ys) ls@Empty) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyH B5')) = LR f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyL B0')) = LR f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyH B3')) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyL B2')) = LGY f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(TinyL B0{})) = LR f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(TinyL B2{})) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigY f N ls@Empty) = LGY f ls
-popL (BigY f N ls@(TinyH B5')) = LR f ls
-popL (BigY f N ls@(TinyL B0')) = LR f ls
-popL (BigY f N ls@(TinyH B3')) = LGY f ls
-popL (BigY f N ls@(TinyL B2')) = LGY f ls
+popL (BigY f N ls@(TinyH B5{})) = LR f ls
+popL (BigY f N ls@(TinyL B0{})) = LR f ls
+popL (BigY f N ls@(TinyH B3{})) = LGY f ls
+popL (BigY f N ls@(TinyL B2{})) = LGY f ls
 popL (BigY f N ls@(BigR _ _ _)) = LR f ls
 popL (BigY f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigY f (Y1 b) Empty) = LGY f (toTiny b)
 popL (BigY f (Y y ys) ls@Empty) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyH B5')) = LR f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyL B0')) = LR f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyH B3')) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyL B2')) = LGY f (BigY y ys ls)
+popL (BigY f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
+popL (BigY f (Y y ys) ls@(TinyL B0{})) = LR f (BigY y ys ls)
+popL (BigY f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
+popL (BigY f (Y y ys) ls@(TinyL B2{})) = LGY f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigR f N ls@Empty) = LGY f ls
-popL (BigR f N ls@(TinyH B3')) = LGY f ls
-popL (BigR f N ls@(TinyL B2')) = LGY f ls
+popL (BigR f N ls@(TinyH B3{})) = LGY f ls
+popL (BigR f N ls@(TinyL B2{})) = LGY f ls
 popL (BigR f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigR f (Y1 b) Empty) = LGY f (toTiny b)
 popL (BigR f (Y y ys) ls@Empty) = LGY f (BigY y ys ls)
-popL (BigR f (Y y ys) ls@(TinyH B3')) = LGY f (BigY y ys ls)
-popL (BigR f (Y y ys) ls@(TinyL B2')) = LGY f (BigY y ys ls)
+popL (BigR f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
+popL (BigR f (Y y ys) ls@(TinyL B2{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 {-# INLINE popL #-}
 

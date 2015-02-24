@@ -607,6 +607,62 @@ push a (Deque (BigY (YX (B4 b c d e) x) y z)) = fixup N (BigR (RX (B5 a b c d e)
 empty :: Deque q i i
 empty = Deque LEmpty
 
+infixr 5 :|
+data View l r a c where
+  Empty :: View l r a a
+  (:|) :: l b c -> r a b -> View l r a c
+
+class Uncons t where
+  uncons :: t r a b -> View r (t r) a b
+
+class Unsnoc t where
+  unsnoc :: t r a b -> View (t r) r a b
+
+infixr 5 <|
+class Cons t where
+  (<|) :: r b c -> t r a b -> t r a c
+
+infixl 5 |>
+class Snoc t where
+  (|>) :: t r b c -> r a b -> t r a c
+
+instance Cons Deque where
+  (<|) = push
+
+instance Unsnoc Deque where
+  unsnoc (Deque LEmpty) = Empty
+  unsnoc (Deque (TinyL (B0))) = Empty
+  unsnoc (Deque (TinyL (B1 b))) = Deque LEmpty :| b
+  unsnoc (Deque (TinyL (B2 b c))) = Deque (TinyL (B1 b)) :| c
+  unsnoc (Deque (TinyH (B3 b c d))) = Deque (TinyL (B2 b c)) :| d
+  unsnoc (Deque (TinyH (B4 b c d e))) = Deque (TinyH (B3 b c d)) :| e
+  unsnoc (Deque (BigY (YX (B1 b) (B1 i)) y z)) = fixup N (BigR (XR (B1 b) (B0)) y z) :| i
+  unsnoc (Deque (BigY (YX (B1 b) (B2 i j)) y z)) = Deque (BigY (YX (B1 b) (B1 i)) y z) :| j
+  unsnoc (Deque (BigY (YX (B1 b) (B3 i j k)) y z)) = Deque (BigY (YX (B1 b) (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (YX (B1 b) (B4 i j k l)) y z)) = Deque (BigY (YX (B1 b) (B3 i j k)) y z) :| l
+  unsnoc (Deque (BigY (GY (B2 b c) (B1 i)) y z)) = fixup N (BigR (XR (B2 b c) B0) y z) :| i
+  unsnoc (Deque (BigY (GY (B2 b c) (B4 i j k l)) y z)) = Deque (BigG (GG (B2 b c) (B3 i j k)) y z) :| l
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y LEmpty)) = Deque (BigY (GY (B2 b c) (B1 i)) y LEmpty) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyL{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyH B3{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(BigR{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(BigG{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B2 b c) (B3 i j k)) y z)) = Deque (BigG (GG (B2 b c) (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (GY (B3 b c d) (B1 i)) y z)) = fixup N (BigR (XR (B3 b c d) B0) y z) :| i
+  unsnoc (Deque (BigY (GY (B3 b c d) (B4 i j k l)) y z)) = Deque (BigG (GG (B3 b c d) (B3 i j k)) y z) :| l
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y LEmpty)) = Deque (BigY (GY (B3 b c d) (B1 i)) y LEmpty) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyL{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyH B3{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(BigR{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(BigG{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (GG (B3 b c d) (B3 i j k)) y z)) = Deque (BigG (GG (B3 b c d) (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (YX (B4 b c d e) (B1 i)) y z)) = fixup N (BigR (XR (B4 b c d e) B0) y z) :| i
+  unsnoc (Deque (BigY (YX (B4 b c d e) (B2 i j)) y z)) = Deque (BigY (YX (B4 b c d e) (B1 i)) y z) :| j
+  unsnoc (Deque (BigY (YX (B4 b c d e) (B3 i j k)) y z)) = Deque (BigY (YX (B4 b c d e) (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (YX (B4 b c d e) (B4 i j k l)) y z)) = Deque (BigY (YX (B4 b c d e) (B3 i j k)) y z) :| l
+
 data Foo a b where
   F :: Int -> Foo () ()
 

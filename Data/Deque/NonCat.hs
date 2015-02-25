@@ -129,8 +129,8 @@ deriving instance Show (Yellows q r i j k l)
 
 data Level r y g q i j where
   LEmpty :: Level F F c q i i
-  TinyH :: !(Buffer F F F g y r q i j) -> Level r y g q i j
-  TinyL :: !(Buffer r y g F F F q i j) -> Level F F T q i j
+  TinyH :: !(Buffer F F F F y r q i j) -> Level r y F q i j
+  TinyL :: !(Buffer r y g gg F F q i j) -> Level F F T q i j
   BigG :: !(Fringe F F T q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level F F T q i n
   BigY :: !(Fringe F T F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level c1 T c2 q i n
   BigR :: !(Fringe T F F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level F F c r k l) -> Level T F F q i n
@@ -201,22 +201,17 @@ combine f@(YX _ _) ls@(BigR _ _ _) = BigY f N ls
 combine f@(GY _ _) ls@(BigR _ _ _) = BigY f N ls
 combine f@(GG _ _) ls@(BigR _ _ _) = BigG f N ls
 combine f@(RX _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
-combine f@(RX _ _) g@(TinyH B3{}) = BigR f N g
 combine f@(RX _ _) g@TinyL{} = BigR f N g
 combine f@(XR _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
-combine f@(XR _ _) g@(TinyH B3{}) = BigR f N g
 combine f@(XR _ _) g@TinyL{} = BigR f N g
 combine f@(YX _ _) ls@(TinyH B5{}) = BigY f N ls
 combine f@(YX _ _) ls@TinyL{} = BigY f N ls
-combine f@(YX _ _) ls@(TinyH B3{}) = BigY f N ls
 combine f@(YX _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
 combine f@(GY _ _) ls@(TinyH B5{}) = BigY f N ls
 combine f@(GY _ _) ls@TinyL{} = BigY f N ls
-combine f@(GY _ _) ls@(TinyH B3{}) = BigY f N ls
 combine f@(GY _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
 combine f@(GG _ _) ls@(TinyH B5{}) = BigG f N ls
 combine f@(GG _ _) ls@TinyL{} = BigG f N ls
-combine f@(GG _ _) ls@(TinyH B3{}) = BigG f N ls
 combine f@(GG _ _) (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-# INLINE combine #-}
 
@@ -227,7 +222,6 @@ combineGG f ls@(BigG _ _ _) = BigG f N ls
 combineGG f ls@(BigR _ _ _) = BigG f N ls
 combineGG f ls@(TinyH B5{}) = BigG f N ls
 combineGG f ls@TinyL{} = BigG f N ls
-combineGG f ls@(TinyH B3{}) = BigG f N ls
 combineGG f (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-# INLINE combineGG #-}
 
@@ -240,7 +234,7 @@ toTiny :: Buffer a b c d e f q i j -> Level f e (Not f && Not e) q i j
 toTiny b@B0{} = TinyL b
 toTiny b@B1{} = TinyL b
 toTiny b@B2{} = TinyL b
-toTiny b@B3{} = TinyH b
+toTiny b@B3{} = TinyL b
 toTiny b@B4{} = TinyH b
 toTiny b@B5{} = TinyH b
 {-# INLINE toTiny #-}
@@ -251,37 +245,31 @@ popL (TinyH _) = LLEmpty
 popL (TinyL _) = LLEmpty
 popL (BigG f N ls@LEmpty) = LGY f ls
 popL (BigG f N ls@(TinyH B5{})) = LR f ls
-popL (BigG f N ls@(TinyH B3{})) = LGY f ls
 popL (BigG f N ls@(TinyL{})) = LGY f ls
 popL (BigG f N ls@(BigR _ _ _)) = LR f ls
 popL (BigG f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigG f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigG f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigY f N ls@LEmpty) = LGY f ls
 popL (BigY f N ls@(TinyH B5{})) = LR f ls
-popL (BigY f N ls@(TinyH B3{})) = LGY f ls
 popL (BigY f N ls@(TinyL{})) = LGY f ls
 popL (BigY f N ls@(BigR _ _ _)) = LR f ls
 popL (BigY f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigY f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigY f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigR f N ls@LEmpty) = LGY f ls
-popL (BigR f N ls@(TinyH B3{})) = LGY f ls
 popL (BigR f N ls@(TinyL{})) = LGY f ls
 popL (BigR f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigR f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigR f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigR f (Y y ys) ls@(TinyH B3{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 {-# INLINE popL #-}
@@ -311,29 +299,29 @@ fixup' (popL -> LGY f1 (popL -> LGY f2 ls)) = case (f1, f2) of
   (RX b1 b2, YX b3 b4) -> case b1 of
     B0{} -> case overUnder b2 of
       Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     B5{} -> case overUnder b2 of
       Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GY b3 b4) -> case b1 of
     B0{} -> case overUnder b2 of
       Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     B5{} -> case overUnder b2 of
       Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GG b3 b4) -> case b1 of
     B0{} -> case overUnder b2 of
       Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     B5{} -> case overUnder b2 of
       Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in let r = H b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
       Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (XR b1 b2, YX b3 b4) -> case overUnder b1 of
     Under b1' -> case b2 of
@@ -506,26 +494,26 @@ fixup' (BigR (XR (B3 a b c) (B0))               N (TinyL (B2 (P s t) (P u v)))) 
 fixup' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL (B2 (P s t) (P u v))))                   = go12 a b c s t u v n o p q r
 fixup' (BigR (XR (B4 a b c d) (B0))             N (TinyL (B2 (P s t) (P u v))))                   = go8 a b c d s t u v
 fixup' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL (B2 (P s t) (P u v))))                   = go13 a b c d s t u v n o p q r
-fixup' (BigR (RX B0 (B0))                       N (TinyH (B3 (P s t) (P u v) (P w x))))           = go6 s t u v w x
-fixup' (BigR (RX B0 (B1 n))                     N (TinyH (B3 (P s t) (P u v) (P w x))))           = go7 s t u v w x n
-fixup' (BigR (RX B0 (B2 n o))                   N (TinyH (B3 (P s t) (P u v) (P w x))))           = go8 s t u v w x n o
-fixup' (BigR (RX B0 (B3 n o p))                 N (TinyH (B3 (P s t) (P u v) (P w x))))           = go9 s t u v w x n o p
-fixup' (BigR (RX B0 (B4 n o p q))               N (TinyH (B3 (P s t) (P u v) (P w x))))           = go10 s t u v w x n o p q
-fixup' (BigR (RX B0 (B5 n o p q r))             N (TinyH (B3 (P s t) (P u v) (P w x))))           = go11 s t u v w x n o p q r
-fixup' (BigR (RX (B5 a b c d e) (B0))           N (TinyH (B3 (P s t) (P u v) (P w x))))           = go11 a b c d e s t u v w x
-fixup' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyH (B3 (P s t) (P u v) (P w x))))           = go12 a b c d e s t u v w x n
-fixup' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyH (B3 (P s t) (P u v) (P w x))))           = go13 a b c d e s t u v w x n o
-fixup' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyH (B3 (P s t) (P u v) (P w x))))           = go14 a b c d e s t u v w x n o p
-fixup' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyH (B3 (P s t) (P u v) (P w x))))           = go15 a b c d e s t u v w x n o p q
-fixup' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyH (B3 (P s t) (P u v) (P w x))))           = go16 a b c d e s t u v w x n o p q r
-fixup' (BigR (XR (B1 a) (B0))                   N (TinyH (B3 (P s t) (P u v) (P w x))))           = go7 a s t u v w x
-fixup' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyH (B3 (P s t) (P u v) (P w x))))           = go12 a s t u v w x n o p q r
-fixup' (BigR (XR (B2 a b) (B0))                 N (TinyH (B3 (P s t) (P u v) (P w x))))           = go8 a b s t u v w x
-fixup' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyH (B3 (P s t) (P u v) (P w x))))           = go13 a b s t u v w x n o p q r
-fixup' (BigR (XR (B3 a b c) (B0))               N (TinyH (B3 (P s t) (P u v) (P w x))))           = go9 a b c s t u v w x
-fixup' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyH (B3 (P s t) (P u v) (P w x))))           = go14 a b c s t u v w x n o p q r
-fixup' (BigR (XR (B4 a b c d) (B0))             N (TinyH (B3 (P s t) (P u v) (P w x))))           = go10 a b c d s t u v w x
-fixup' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyH (B3 (P s t) (P u v) (P w x))))           = go15 a b c d s t u v w x n o p q r
+fixup' (BigR (RX B0 (B0))                       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go6 s t u v w x
+fixup' (BigR (RX B0 (B1 n))                     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 s t u v w x n
+fixup' (BigR (RX B0 (B2 n o))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 s t u v w x n o
+fixup' (BigR (RX B0 (B3 n o p))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 s t u v w x n o p
+fixup' (BigR (RX B0 (B4 n o p q))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 s t u v w x n o p q
+fixup' (BigR (RX B0 (B5 n o p q r))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 s t u v w x n o p q r
+fixup' (BigR (RX (B5 a b c d e) (B0))           N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 a b c d e s t u v w x
+fixup' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a b c d e s t u v w x n
+fixup' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b c d e s t u v w x n o
+fixup' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c d e s t u v w x n o p
+fixup' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d e s t u v w x n o p q
+fixup' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B3 (P s t) (P u v) (P w x))))           = go16 a b c d e s t u v w x n o p q r
+fixup' (BigR (XR (B1 a) (B0))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 a s t u v w x
+fixup' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a s t u v w x n o p q r
+fixup' (BigR (XR (B2 a b) (B0))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 a b s t u v w x
+fixup' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b s t u v w x n o p q r
+fixup' (BigR (XR (B3 a b c) (B0))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 a b c s t u v w x
+fixup' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c s t u v w x n o p q r
+fixup' (BigR (XR (B4 a b c d) (B0))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 a b c d s t u v w x
+fixup' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d s t u v w x n o p q r
 {-# INLINE fixup' #-}
 
 go1 :: q a b -> Level F F T q a b
@@ -533,7 +521,7 @@ go1 a = TinyL (B1 a)
 go2 :: q b c -> q a b -> Level F F T q a c
 go2 a b                                              = TinyL (B2 a b)
 go3 :: q c d -> q b c -> q a b -> Level F F T q a d
-go3 a b c                                            = TinyH (B3 a b c)
+go3 a b c                                            = TinyL (B3 a b c)
 go4 :: q d e -> q c d -> q b c -> q a b -> Level F F T q a e
 go4 a b c d                                          = BigG (GG (B2 a b) (B2 c d)) N LEmpty
 go5 :: q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a f
@@ -574,7 +562,6 @@ go22 a b c d e f g h i j k l m n o p q r s t u v     = BigG (GG (B3 a b c) (B3 t
 implant :: Yellows q r i j k l -> Level F F T r j k -> Deque q i l
 implant N LEmpty = Deque $ LEmpty
 implant N (TinyL b) = Deque $ TinyL b
-implant N (TinyH b) = Deque $ TinyH b
 implant N (BigG b y z) = Deque $ BigG b y z
 implant (Y1 b@B1{}) _ = Deque $ TinyL b -- in agda we could properly eliminate the impossible cases here :( however the thristing ensures we can't throw anything away.
 implant (Y1 b@B4{}) _ = Deque $ TinyH b
@@ -585,8 +572,8 @@ push :: q j k -> Deque q i j -> Deque q i k
 push a (Deque LEmpty) = Deque $ TinyL (B1 a)
 push a (Deque (TinyL (B0))) = Deque $ TinyL (B1 a)
 push a (Deque (TinyL (B1 b))) = Deque $ TinyL (B2 a b)
-push a (Deque (TinyL (B2 b c))) = Deque $ TinyH (B3 a b c)
-push a (Deque (TinyH (B3 b c d))) = Deque $ TinyH (B4 a b c d)
+push a (Deque (TinyL (B2 b c))) = Deque $ TinyL (B3 a b c)
+push a (Deque (TinyL (B3 b c d))) = Deque $ TinyH (B4 a b c d)
 push a (Deque (TinyH (B4 b c d e))) = fixup N (TinyH (B5 a b c d e))
 push a (Deque (BigY (YX (B1 b) (B1 i)) y z)) = Deque $ BigY (GY (B2 a b) (B1 i)) y z
 push a (Deque (BigY (YX (B1 b) (B2 i j)) y z)) = Deque $ BigG (GG (B2 a b) (B2 i j)) y z
@@ -598,7 +585,6 @@ push a (Deque (BigY (GY (B3 b c d) x) y z)) = Deque $ BigY (YX (B4 a b c d) x) y
 push a (Deque (BigG (GG (B3 b c d) x) y LEmpty)) = Deque $ BigY (YX (B4 a b c d) x) y LEmpty
 push a (Deque (BigG (GG (B3 b c d) x) y z@(TinyH B5{}))) = Deque $ BigY (YX (B4 a b c d) x) y (fixup' z)
 push a (Deque (BigG (GG (B3 b c d) x) y z@(TinyL{}))) = Deque $ BigY (YX (B4 a b c d) x) y z
-push a (Deque (BigG (GG (B3 b c d) x) y z@(TinyH B3{}))) = Deque $ BigY (YX (B4 a b c d) x) y z
 push a (Deque (BigG (GG (B3 b c d) x) y z@(BigR{}))) = Deque $ BigY (YX (B4 a b c d) x) y (fixup' z)
 push a (Deque (BigG (GG (B3 b c d) x) y z@(BigG{}))) = Deque $ BigY (YX (B4 a b c d) x) y z
 push a (Deque (BigY (YX (B4 b c d e) x) y z)) = fixup N (BigR (RX (B5 a b c d e) x) y z)
@@ -634,8 +620,8 @@ instance Unsnoc Deque where
   unsnoc (Deque (TinyL (B0))) = Empty
   unsnoc (Deque (TinyL (B1 b))) = Deque LEmpty :| b
   unsnoc (Deque (TinyL (B2 b c))) = Deque (TinyL (B1 b)) :| c
-  unsnoc (Deque (TinyH (B3 b c d))) = Deque (TinyL (B2 b c)) :| d
-  unsnoc (Deque (TinyH (B4 b c d e))) = Deque (TinyH (B3 b c d)) :| e
+  unsnoc (Deque (TinyL (B3 b c d))) = Deque (TinyL (B2 b c)) :| d
+  unsnoc (Deque (TinyH (B4 b c d e))) = Deque (TinyL (B3 b c d)) :| e
   unsnoc (Deque (BigY (YX (B1 b) (B1 i)) y z)) = fixup N (BigR (XR (B1 b) (B0)) y z) :| i
   unsnoc (Deque (BigY (YX (B1 b) (B2 i j)) y z)) = Deque (BigY (YX (B1 b) (B1 i)) y z) :| j
   unsnoc (Deque (BigY (YX (B1 b) (B3 i j k)) y z)) = Deque (BigY (YX (B1 b) (B2 i j)) y z) :| k
@@ -645,7 +631,6 @@ instance Unsnoc Deque where
   unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y LEmpty)) = Deque (BigY (GY (B2 b c) (B1 i)) y LEmpty) :| j
   unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y (fixup' z)) :| j
   unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyL{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
-  unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(TinyH B3{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
   unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(BigR{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y (fixup' z)) :| j
   unsnoc (Deque (BigG (GG (B2 b c) (B2 i j)) y z@(BigG{}))) = Deque (BigY (GY (B2 b c) (B1 i)) y z) :| j
   unsnoc (Deque (BigG (GG (B2 b c) (B3 i j k)) y z)) = Deque (BigG (GG (B2 b c) (B2 i j)) y z) :| k
@@ -654,7 +639,6 @@ instance Unsnoc Deque where
   unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y LEmpty)) = Deque (BigY (GY (B3 b c d) (B1 i)) y LEmpty) :| j
   unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y (fixup' z)) :| j
   unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyL{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
-  unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(TinyH B3{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
   unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(BigR{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y (fixup' z)) :| j
   unsnoc (Deque (BigG (GG (B3 b c d) (B2 i j)) y z@(BigG{}))) = Deque (BigY (GY (B3 b c d) (B1 i)) y z) :| j
   unsnoc (Deque (BigG (GG (B3 b c d) (B3 i j k)) y z)) = Deque (BigG (GG (B3 b c d) (B2 i j)) y z) :| k

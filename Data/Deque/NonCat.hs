@@ -48,7 +48,7 @@ pushB a (B1 b) = B2 a b
 pushB a (B2 b c) = B3 a b c
 pushB a (B3 b c d) = B4 a b c d
 pushB a (B4 b c d e) = B5 a b c d e
-{-# INLINE pushB #-}
+{-- INLINE pushB #-}
 
 popB :: Buffer F v w x y z q i j -> HPair q (Buffer v w x y z F q) i j
 popB (B1 a) = a `H` B0
@@ -56,18 +56,18 @@ popB (B2 a b) = a `H` B1 b
 popB (B3 a b c) = a `H` B2 b c
 popB (B4 a b c d) = a `H` B3 b c d
 popB (B5 a b c d e) = a `H` B4 b c d e
-{-# INLINE popB #-}
+{-- INLINE popB #-}
 
 pushB2 :: Pair q j k -> Buffer u v w x F F q i j -> Buffer F F u v w x q i k
 pushB2 (P a b) cs = pushB a (pushB b cs)
-{-# INLINE pushB2 #-}
+{-- INLINE pushB2 #-}
 
 popB2 :: Buffer F F w x y z q i j -> HPair (Pair q) (Buffer w x y z F F q) i j
 popB2 as =
   case popB as of
     a `H` bs -> case popB bs of
       b `H` cs -> P a b `H` cs
-{-# INLINE popB2 #-}
+{-- INLINE popB2 #-}
 
 injectB :: Buffer u v w x y F q j k -> q i j -> Buffer F u v w x y q i k
 injectB B0 a = B1 a
@@ -75,7 +75,7 @@ injectB (B1 a) b = B2 a b
 injectB (B2 a b) c = B3 a b c
 injectB (B3 a b c) d = B4 a b c d
 injectB (B4 a b c d) e = B5 a b c d e
-{-# INLINE injectB #-}
+{-- INLINE injectB #-}
 
 ejectB :: Buffer F v w x y z q i j -> HPair (Buffer v w x y z F q) q i j
 ejectB (B1 a) = B0 `H` a
@@ -83,17 +83,17 @@ ejectB (B2 a b) = B1 a `H` b
 ejectB (B3 a b c) = B2 a b `H` c
 ejectB (B4 a b c d) = B3 a b c `H` d
 ejectB (B5 a b c d e) = B4 a b c d `H` e
-{-# INLINE ejectB #-}
+{-- INLINE ejectB #-}
 
 injectB2 :: Buffer u v w x F F q j k -> Pair q i j -> Buffer F F u v w x q i k
 injectB2 as (P b c) = injectB (injectB as b) c
-{-# INLINE injectB2 #-}
+{-- INLINE injectB2 #-}
 
 ejectB2 :: Buffer F F w x y z q i j -> HPair (Buffer w x y z F F q) (Pair q) i j
 ejectB2 cs = case ejectB cs of
   bs `H` c -> case ejectB bs of
     as `H` b -> as `H` P b c
-{-# INLINE ejectB2 #-}
+{-- INLINE ejectB2 #-}
 
 data OverUnder u v w x y z q i j where
   Under :: Buffer u v F F F F q i j -> OverUnder u v w x y z q i j
@@ -107,7 +107,7 @@ overUnder (B2 a b) = Okay (B2 a b)
 overUnder (B3 a b c) = Okay (B3 a b c)
 overUnder (B4 a b c d) = Over (B4 a b c d)
 overUnder (B5 a b c d e) = Over (B5 a b c d e)
-{-# INLINE overUnder #-}
+{-- INLINE overUnder #-}
 
 data Nope i j where
 
@@ -179,7 +179,7 @@ toFringe a@B2{} b@B2{} = GG a b
 toFringe a@B2{} b@B3{} = GG a b
 toFringe a@B3{} b@B2{} = GG a b
 toFringe a@B3{} b@B3{} = GG a b
-{-# INLINE toFringe #-}
+{-- INLINE toFringe #-}
 
 combine :: ((r && r') ~ F) => Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
 combine f@(RX _ _) LEmpty = BigR f N LEmpty
@@ -213,7 +213,7 @@ combine f@(GY _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
 combine f@(GG _ _) ls@(TinyH B5{}) = BigG f N ls
 combine f@(GG _ _) ls@TinyL{} = BigG f N ls
 combine f@(GG _ _) (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
-{-# INLINE combine #-}
+{-- INLINE combine #-}
 
 combineGG :: Fringe F F T q i j m n -> Level r' y' g' (Pair q) j m -> Level F F T q i n
 combineGG f LEmpty = BigG f N LEmpty
@@ -223,7 +223,7 @@ combineGG f ls@(BigR _ _ _) = BigG f N ls
 combineGG f ls@(TinyH B5{}) = BigG f N ls
 combineGG f ls@TinyL{} = BigG f N ls
 combineGG f (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
-{-# INLINE combineGG #-}
+{-- INLINE combineGG #-}
 
 data LCons r y g q i n where
   LR :: !(Fringe r y g q i j m n) -> !(Level T y' g' (Pair q) j m) -> LCons r y g q i n
@@ -237,7 +237,7 @@ toTiny b@B2{} = TinyL b
 toTiny b@B3{} = TinyL b
 toTiny b@B4{} = TinyH b
 toTiny b@B5{} = TinyH b
-{-# INLINE toTiny #-}
+{-- INLINE toTiny #-}
 
 popL :: Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
 popL LEmpty = LLEmpty
@@ -272,27 +272,27 @@ popL (BigR f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigR f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-{-# INLINE popL #-}
+{-- INLINE popL #-}
 
 moveUpL :: Buffer u v w x F F q j k -> Buffer F b c d e f (Pair q) i j -> HPair (Buffer F F u v w x q) (Buffer b c d e f F (Pair q)) i k
 moveUpL b1 b2 = case popB b2 of H p b2' -> injectB2 b1 p `H` b2'
-{-# INLINE moveUpL #-}
+{-- INLINE moveUpL #-}
 
 moveDownL :: Buffer F F w x y z q j k -> Buffer a b c d e F (Pair q) i j -> HPair (Buffer w x y z F F q) (Buffer F a b c d e (Pair q)) i k
 moveDownL b1 b2 = case ejectB2 b1 of H b1' p -> b1' `H` pushB p b2
-{-# INLINE moveDownL #-}
+{-- INLINE moveDownL #-}
 
 moveDownR :: Buffer u v w x y F (Pair q) j k -> Buffer F F c d e f q i j -> HPair (Buffer F u v w x y (Pair q)) (Buffer c d e f F F q) i k
 moveDownR b1 b2 = case popB2 b2 of H p b2' -> injectB b1 p `H` b2'
-{-# INLINE moveDownR #-}
+{-- INLINE moveDownR #-}
 
 moveUpR :: Buffer F v w x y z (Pair q) j k -> Buffer a b c d F F q i j -> HPair (Buffer v w x y z F (Pair q)) (Buffer F F a b c d q) i k
 moveUpR b1 b2 = case ejectB b1 of H b1' p -> b1' `H` pushB2 p b2
-{-# INLINE moveUpR #-}
+{-- INLINE moveUpR #-}
 
 fixup :: Yellows q r i j k l -> Level T F F r j k -> Deque q i l
 fixup y z = implant y (fixup' z)
-{-# INLINE fixup #-}
+{-- INLINE fixup #-}
 
 fixup' :: Level T F F q i j -> Level F F T q i j
 fixup' (popL -> LGY f1 (popL -> LGY f2 ls)) = case (f1, f2) of
@@ -374,7 +374,7 @@ fixup' (popL -> LGY f1 (popL -> LR f2 ls)) = case (f1, f2) of
       B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
       B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
 fixup' a = fixup2' a
-{-# INLINE fixup' #-}
+{-- INLINE fixup' #-}
 
 fixup2' :: Level T F F q i j -> Level F F T q i j
 fixup2' (TinyH (B5 a b c d e))                                                                     = go5 a b c d e
@@ -570,7 +570,7 @@ implant N (BigG b y z) = Deque $ BigG b y z
 implant (Y1 b@B1{}) _ = Deque $ TinyL b -- in agda we could properly eliminate the impossible cases here :( however the thristing ensures we can't throw anything away.
 implant (Y1 b@B4{}) _ = Deque $ TinyH b
 implant (Y y ys) z = Deque $ BigY y ys z
-{-# INLINE implant #-}
+{-- INLINE implant #-}
 
 empty :: Deque q i i
 empty = Deque LEmpty

@@ -3,7 +3,6 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-- LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -15,6 +14,7 @@
 
 module Data.Deque.Cat where
 
+import Control.DeepSeq
 import Data.Type.Bool
 import qualified Data.Deque.NonCat as NC
 
@@ -31,6 +31,9 @@ data Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j where
   B7 :: !(q o p) -> !(q n o) -> !(q m n) -> !(q l m) -> !(q k l) -> !(q j k) -> !(q i j) -> Buffer F F F F F F T F F q i p
   B8 :: !(q p r) -> !(q o p) -> !(q n o) -> !(q m n) -> !(q l m) -> !(q k l) -> !(q j k) -> !(q i j)  -> Buffer F F F F F F F T F q i r
   B9 :: !(NC.Deque q s t) -> !(q r s) -> !(q p r) -> !(q o p) -> !(q n o) -> !(q m n) -> !(q l m) -> !(q k l) -> !(q j k) -> !(q i j) -> !(NC.Deque q h i) -> Buffer F F F F F F F F T q h t
+
+instance NFData (Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j) where
+  rnf !_ = ()
 
 instance Show (Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j) where
   show B1{} = "B1"
@@ -104,36 +107,45 @@ ejectB (B9 dp a b c d e f g h i ds) = case NC.unsnoc ds of
     NC.Empty -> Shift (B8 a b c d e f g h) `H` i
 
 data StoredTriple q i j where
-  S1 :: Buffer F F k3 k4 k5 k6 k7 k8 k9 q j k -> StoredTriple q j k
-  S3 :: Buffer F F k3 k4 k5 k6 k7 k8 k9 q l m -> Deque (Closed lg) (Closed rg) (StoredTriple q) k l -> Buffer F F c3 c4 c5 c6 c7 c8 c9 q j k -> StoredTriple q j m
+  S1 :: !(Buffer F F k3 k4 k5 k6 k7 k8 k9 q j k) -> StoredTriple q j k
+  S3 :: !(Buffer F F k3 k4 k5 k6 k7 k8 k9 q l m) -> Deque (Closed lg) (Closed rg) (StoredTriple q) k l -> !(Buffer F F c3 c4 c5 c6 c7 c8 c9 q j k) -> StoredTriple q j m
+
+instance NFData (StoredTriple q i j) where
+  rnf !_ = ()
 
 deriving instance Show (StoredTriple q i j)
 
 data OnlyTriple ge q i j where
-  O0 :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> OnlyTriple (Closed Green) q j k
-  ORX :: Buffer F F F F T F F F F q l m -> Deque (Closed Green) (Closed Green) (StoredTriple q) k l -> Buffer F F F F c5 c6 c7 c8 c9 q j k -> OnlyTriple (Closed Red) q j m
-  OXR :: Buffer F F F F F k6 k7 k8 k9 q l m -> Deque (Closed Green) (Closed Green) (StoredTriple q) k l -> Buffer F F F F T F F F F q j k -> OnlyTriple (Closed Red) q j m
-  OOX :: Buffer F F F F F T F F F q l m -> Deque (Closed Green) (Open r s t u) (StoredTriple q) k l -> Buffer F F F F F c6 c7 c8 c9 q j k -> OnlyTriple (Open r s t u) q j m
-  OXO :: Buffer F F F F F F k7 k8 k9 q l m -> Deque (Closed Green) (Open r s t u) (StoredTriple q) k l -> Buffer F F F F F T F F F q j k -> OnlyTriple (Open r s t u) q j m
-  OYX :: Buffer F F F F F F T F F q l m -> Deque (Open r s t u) (Closed kr) (StoredTriple q) k l -> Buffer F F F F F F c7 c8 c9 q j k -> OnlyTriple (Open r s t u) q j m
-  OGY :: Buffer F F F F F F F k8 k9 q l m -> Deque (Open r s t u) (Closed kr) (StoredTriple q) k l -> Buffer F F F F F F T F F q j k -> OnlyTriple (Open r s t u) q j m
-  OGG :: Buffer F F F F F F F k8 k9 q l m -> Deque (Closed k1) (Closed k2) (StoredTriple q) k l -> Buffer F F F F F F F c8 c9 q j k -> OnlyTriple (Closed Green) q j m
+  O0  :: !(Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k) -> OnlyTriple (Closed Green) q j k
+  ORX :: !(Buffer F F F F T F F F F q l m) -> !(Deque (Closed Green) (Closed Green) (StoredTriple q) k l) -> !(Buffer F F F F c5 c6 c7 c8 c9 q j k) -> OnlyTriple (Closed Red) q j m
+  OXR :: !(Buffer F F F F F k6 k7 k8 k9 q l m) -> !(Deque (Closed Green) (Closed Green) (StoredTriple q) k l) -> !(Buffer F F F F T F F F F q j k) -> OnlyTriple (Closed Red) q j m
+  OOX :: !(Buffer F F F F F T F F F q l m) -> !(Deque (Closed Green) (Open r s t u) (StoredTriple q) k l) -> !(Buffer F F F F F c6 c7 c8 c9 q j k) -> OnlyTriple (Open r s t u) q j m
+  OXO :: !(Buffer F F F F F F k7 k8 k9 q l m) -> !(Deque (Closed Green) (Open r s t u) (StoredTriple q) k l) -> !(Buffer F F F F F T F F F q j k) -> OnlyTriple (Open r s t u) q j m
+  OYX :: !(Buffer F F F F F F T F F q l m) -> !(Deque (Open r s t u) (Closed kr) (StoredTriple q) k l) -> !(Buffer F F F F F F c7 c8 c9 q j k) -> OnlyTriple (Open r s t u) q j m
+  OGY :: !(Buffer F F F F F F F k8 k9 q l m) -> !(Deque (Open r s t u) (Closed kr) (StoredTriple q) k l) -> !(Buffer F F F F F F T F F q j k) -> OnlyTriple (Open r s t u) q j m
+  OGG :: !(Buffer F F F F F F F k8 k9 q l m) -> !(Deque (Closed k1) (Closed k2) (StoredTriple q) k l) -> !(Buffer F F F F F F F c8 c9 q j k) -> OnlyTriple (Closed Green) q j m
+
+instance NFData (OnlyTriple ge q i j) where
+  rnf !_ = ()
 
 deriving instance Show (OnlyTriple ge q i j)
 
 data LeftTriple ge q i j where
-  L0 :: Buffer F F F F k5 k6 k7 k8 k9 q k l -> Buffer F T F F F F F F F q j k -> LeftTriple (Closed Green) q j l
-  LR :: Buffer F F F F T F F F F q l m -> Deque (Closed Green) (Closed Green) (StoredTriple q) k l -> Buffer F T F F F F F F F q j k -> LeftTriple (Closed Red) q j m
-  LO :: Buffer F F F F F T F F F q l m -> Deque (Closed Green) (Open r s t u) (StoredTriple q) k l -> Buffer F T F F F F F F F q j k -> LeftTriple (Open r s t u) q j m
-  LY :: Buffer F F F F F F T F F q l m -> Deque (Open r s t u) (Closed cr) (StoredTriple q) k l -> Buffer F T F F F F F F F q j k -> LeftTriple (Open r s t u) q j m
-  LG :: Buffer F F F F F F F c8 c9 q l m -> Deque (Closed cl) (Closed cr) (StoredTriple q) k l -> Buffer F T F F F F F F F q j k -> LeftTriple (Closed Green) q j m
+  L0 :: !(Buffer F F F F k5 k6 k7 k8 k9 q k l) -> !(Buffer F T F F F F F F F q j k) -> LeftTriple (Closed Green) q j l
+  LR :: !(Buffer F F F F T F F F F q l m) -> !(Deque (Closed Green) (Closed Green) (StoredTriple q) k l) -> !(Buffer F T F F F F F F F q j k) -> LeftTriple (Closed Red) q j m
+  LO :: !(Buffer F F F F F T F F F q l m) -> !(Deque (Closed Green) (Open r s t u) (StoredTriple q) k l) -> !(Buffer F T F F F F F F F q j k) -> LeftTriple (Open r s t u) q j m
+  LY :: !(Buffer F F F F F F T F F q l m) -> !(Deque (Open r s t u) (Closed cr) (StoredTriple q) k l) -> !(Buffer F T F F F F F F F q j k) -> LeftTriple (Open r s t u) q j m
+  LG :: !(Buffer F F F F F F F c8 c9 q l m) -> !(Deque (Closed cl) (Closed cr) (StoredTriple q) k l) -> !(Buffer F T F F F F F F F q j k) -> LeftTriple (Closed Green) q j m
+
+instance NFData (LeftTriple ge q i j) where
+  rnf !_ = ()
 
 deriving instance Show (LeftTriple ge q i j)
 
 data Cap (r :: Genus * -> (* -> * -> *) -> * -> * -> *) (s :: Genus *) (t :: * -> * -> *) u b where
   Opening :: Cap r (Open r s t u) s t u
-  Triple :: r g q i j -> Cap r g q i j
-  Cap :: r (Open r' q' s t) q i j -> r' (Closed k) q' s t -> Cap r (Closed k) q i j
+  Triple :: !(r g q i j) -> Cap r g q i j
+  Cap :: !(r (Open r' q' s t) q i j) -> !(r' (Closed k) q' s t) -> Cap r (Closed k) q i j
 
 instance Show (Cap r s t u b) where
   show Opening = "Opening"
@@ -151,19 +163,25 @@ data Genus k where
   Closed :: Colour -> Genus k
 
 data RightTriple (ge :: Genus *) (q :: * -> * -> *) i j where
-  R0 :: Buffer F T F F F F F F F q k l -> Buffer F F F F k5 k6 k7 k8 k9 q j k -> RightTriple (Closed Green) q j l
-  RR :: Buffer F T F F F F F F F q l m -> Deque (Closed Green) (Closed Green) (StoredTriple q) k l -> Buffer F F F F T F F F F q j k -> RightTriple (Closed Red) q j m
-  RO :: Buffer F T F F F F F F F q l m -> Deque (Closed Green) (Open r s t u) (StoredTriple q) k l -> Buffer F F F F F T F F F q j k -> RightTriple (Open r s t u) q j m
-  RY :: Buffer F T F F F F F F F q l m -> Deque (Open r s t u) (Closed kr) (StoredTriple q) k l -> Buffer F F F F F F T F F q j k -> RightTriple (Open r s t u) q j m
-  RG :: Buffer F T F F F F F F F q l m -> Deque (Closed kl) (Closed kr) (StoredTriple q) k l -> Buffer F F F F F F F c8 c9 q j k -> RightTriple (Closed Green) q j m
+  R0 :: !(Buffer F T F F F F F F F q k l) -> !(Buffer F F F F k5 k6 k7 k8 k9 q j k) -> RightTriple (Closed Green) q j l
+  RR :: !(Buffer F T F F F F F F F q l m) -> !(Deque (Closed Green) (Closed Green) (StoredTriple q) k l) -> !(Buffer F F F F T F F F F q j k) -> RightTriple (Closed Red) q j m
+  RO :: !(Buffer F T F F F F F F F q l m) -> !(Deque (Closed Green) (Open r s t u) (StoredTriple q) k l) -> !(Buffer F F F F F T F F F q j k) -> RightTriple (Open r s t u) q j m
+  RY :: !(Buffer F T F F F F F F F q l m) -> !(Deque (Open r s t u) (Closed kr) (StoredTriple q) k l) -> !(Buffer F F F F F F T F F q j k) -> RightTriple (Open r s t u) q j m
+  RG :: !(Buffer F T F F F F F F F q l m) -> !(Deque (Closed kl) (Closed kr) (StoredTriple q) k l) -> !(Buffer F F F F F F F c8 c9 q j k) -> RightTriple (Closed Green) q j m
+
+instance NFData (RightTriple ge q i j) where
+  rnf !_ = ()
 
 deriving instance Show (RightTriple ge q i j)
 
 data Deque lg rg q i j where
   D0 :: Deque (Closed Green) (Closed Green) q i i
-  D2 :: Cap LeftTriple lg q j k -> Cap RightTriple rg q i j -> Deque lg rg q i k
-  DOL :: Cap OnlyTriple b q i j -> Deque b (Closed Green) q i j
-  DOR :: Cap OnlyTriple b q i j -> Deque (Closed Green) b q i j
+  D2 :: !(Cap LeftTriple lg q j k) -> !(Cap RightTriple rg q i j) -> Deque lg rg q i k
+  DOL :: !(Cap OnlyTriple b q i j) -> Deque b (Closed Green) q i j
+  DOR :: !(Cap OnlyTriple b q i j) -> Deque (Closed Green) b q i j
+
+instance NFData (Deque lg rg q i j) where
+  rnf !_ = ()
 
 deriving instance Show (Deque lg rg q i j)
 
@@ -856,6 +874,9 @@ fixRight d = case d of
         H p1l2 (NoShift rem2) -> RG (B2 p1l1 p1l2) D0 (catenateB rem2 s1)
 
 data Foo a b where
-  F :: Int -> Foo () ()
+  F :: !Int -> Foo () ()
+
+instance NFData (Foo a b) where
+  rnf !_ = ()
 
 deriving instance Show (Foo a b)

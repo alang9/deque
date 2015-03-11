@@ -873,6 +873,79 @@ fixRight d = case d of
         H p1l2 (Shift rem2) -> RG (B2 p1l1 p1l2) D0 (catenateB rem2 s1)
         H p1l2 (NoShift rem2) -> RG (B2 p1l1 p1l2) D0 (catenateB rem2 s1)
 
+data ClosedDeque q i j where
+  CD :: Deque (Closed lg) (Closed rg) q i j -> ClosedDeque q i j
+
+data View l r a c where
+  Empty :: View l r a a
+  (:|) :: l b c -> r a b -> View l r a c
+
+popNoRepair :: Deque (Closed Green) (Closed Green) q i j -> View q (ClosedDeque q) i j
+popNoRepair d = case d of
+  D0 -> Empty
+  D2 (Triple (LG p1 d1 s1)) rt -> case popB p1 of
+    H p1l1 (Shift rem1@B7{}) -> case d1 of
+      D2 lt2 rt2 -> case uncap lt2 of ViewCap lt3 cap3 -> p1l1 :| (CD $ D2 (Cap (LY rem1 (D2 lt3 rt2) s1) cap3) rt)
+      DOL ot -> case uncap ot of ViewCap ot2 cap2 -> p1l1 :| (CD $ D2 (Cap (LY rem1 (DOL ot2) s1) cap2) rt)
+      DOR ot -> case uncap ot of ViewCap ot2 cap2 -> p1l1 :| (CD $ D2 (Cap (LY rem1 (DOL ot2) s1) cap2) rt)
+      D0 -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+    H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ D2 (Triple (LG rem1 d1 s1)) rt)
+    H p1l1 (NoShift rem1) -> p1l1 :| (CD $ D2 (Triple (LG rem1 d1 s1)) rt)
+  D2 (Cap (LY p1 d1 s1) cap1) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> case d1 of
+      D2 lt2 rt2 -> case uncap rt2 of ViewCap rt3 cap3 -> p1l1 :| (CD $ D2 (Cap (LO rem1 (D2 (cap lt2 cap1) rt3) s1) cap3) rt)
+      DOL ot -> p1l1 :| (CD $ D2 (Cap (LO rem1 (DOR ot) s1) cap1) rt)
+  D2 (Cap (LO p1 d1 s1) cap1) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> case d1 of
+      D2 lt2 rt2 -> p1l1 :| (CD $ D2 (Triple (LR rem1 (D2 lt2 (cap rt2 cap1)) s1)) rt)
+      DOR ot -> p1l1 :| (CD $ D2 (Triple (LR rem1 (DOR (cap ot cap1)) s1)) rt)
+  D2 (Triple (L0 p1 s1)) rt -> case popB p1 of
+    H p1l1 (Shift rem1@B4{}) -> case rt of
+      Triple (R0 lt2 rt2) -> p1l1 :| (CD $ DOL (Triple (O0 (catenateB rem1 (catenateB s1 (catenateB lt2 rt2))))))
+      Triple (RG lt2 d2 rt2) -> p1l1 :| (CD $ DOL (Triple (OGG (catenateB rem1 (catenateB s1 lt2)) d2 rt2)))
+      Cap (RY lt2 d2 rt2) cap2 -> p1l1 :| (CD $ DOL (Cap (OGY (catenateB rem1 (catenateB s1 lt2)) d2 rt2) cap2))
+      Cap (RO lt2 d2 rt2) cap2 -> p1l1 :| (CD $ DOL (Cap (OXO (catenateB rem1 (catenateB s1 lt2)) d2 rt2) cap2))
+    H p1l1 (Shift rem1@B5{}) -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+    H p1l1 (Shift rem1@B6{}) -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+    H p1l1 (Shift rem1@B7{}) -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+    H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+    H p1l1 (NoShift rem1) -> p1l1 :| (CD $ D2 (Triple (L0 rem1 s1)) rt)
+  DOL ot -> only ot
+  DOR ot -> only ot
+  where
+    only :: Cap OnlyTriple (Closed Green) q i j -> View q (ClosedDeque q) i j
+    only (Triple (O0 p1)) = case popB p1 of
+      H p1l1 NoB -> p1l1 :| (CD D0)
+      H p1l1 (Shift rem1) -> p1l1 :| (CD $ DOL (Triple (O0 rem1)))
+      H p1l1 (NoShift rem1) -> p1l1 :| (CD $ DOL (Triple (O0 rem1)))
+    only (Triple (OGG p1 d1 s1)) = case popB p1 of
+      H p1l1 (Shift rem1@B7{}) -> case d1 of
+        D2 lt2 rt2 -> case uncap lt2 of ViewCap lt3 cap3 -> p1l1 :| (CD $ DOL (Cap (OYX rem1 (D2 lt3 rt2) s1) cap3))
+        DOL ot -> case uncap ot of ViewCap ot3 cap3 -> p1l1 :| (CD $ DOL (Cap (OYX rem1 (DOL ot3) s1) cap3))
+        DOR ot -> case uncap ot of ViewCap ot3 cap3 -> p1l1 :| (CD $ DOL (Cap (OYX rem1 (DOL ot3) s1) cap3))
+        D0 -> p1l1 :| (CD $ DOL (Triple (O0 (catenateB rem1 s1))))
+      H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ DOL (Triple (OGG rem1 d1 s1)))
+      H p1l1 (NoShift rem1) -> p1l1 :| (CD $ DOL (Triple (OGG rem1 d1 s1)))
+    only (Cap (OOX p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> p1l1 :| (CD $ DOL (Triple (ORX rem1 (plugR d1 cap1) s1)))
+    only (Cap (OXO p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1@B6{}) -> p1l1 :| (CD $ DOL (Cap (OOX rem1 d1 s1) cap1))
+      H p1l1 (Shift rem1@B7{}) -> p1l1 :| (CD $ DOL (Cap (OXO rem1 d1 s1) cap1))
+      H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ DOL (Cap (OXO rem1 d1 s1) cap1))
+      H p1l1 (NoShift rem1)    -> p1l1 :| (CD $ DOL (Cap (OXO rem1 d1 s1) cap1))
+    only (Cap (OYX p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> case d1 of
+        D2 lt2 rt2 -> case uncap rt2 of ViewCap rt3 cap3 -> p1l1 :| (CD $ DOL (Cap (OOX rem1 (D2 (cap lt2 cap1) rt3) s1) cap3))
+        DOL ot -> p1l1 :| (CD $ DOL (Cap (OOX rem1 (DOR ot) s1) cap1))
+    only (Cap (OGY p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1@B7{}) -> p1l1 :| (CD $ DOL (Cap (OYX rem1 d1 s1) cap1))
+      H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ DOL (Cap (OGY rem1 d1 s1) cap1))
+      H p1l1 (NoShift rem1)    -> p1l1 :| (CD $ DOL (Cap (OGY rem1 d1 s1) cap1))
+{-
+repairLeft :: Cap LeftTriple (Closed k) q i j -> Cap LeftTriple (Closed Green) q i j
+repairLeft
+-}
+
 data Foo a b where
   F :: !Int -> Foo () ()
 

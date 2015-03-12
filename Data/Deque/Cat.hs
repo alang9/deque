@@ -460,11 +460,11 @@ catenate (DOR (Triple (O0 bl)))      (DOL (Triple (O0 br)))      = DOL (Triple (
 catenate (DOR (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
 catenate (DOR (Triple (O0 bl)))      (DOR (Triple (O0 br)))      = DOL (Triple (O0 (catenateB bl br)))
 -- Case 2:
-catenate (DOL (Triple (O0 bl))) d = onlyL bl d
-catenate (DOR (Triple (O0 bl))) d = onlyL bl d
+catenate (DOL (Triple (O0 bl))) (D2 lt rt) = D2 (onlyL bl lt) rt
+catenate (DOR (Triple (O0 bl))) (D2 lt rt) = D2 (onlyL bl lt) rt
 -- Case 3
-catenate d (DOL (Triple (O0 br))) = onlyR d br
-catenate d (DOR (Triple (O0 br))) = onlyR d br
+catenate (D2 lt rt) (DOL (Triple (O0 br))) = D2 lt (onlyR rt br)
+catenate (D2 lt rt) (DOR (Triple (O0 br))) = D2 lt (onlyR rt br)
 -- Case 1
 catenate d e = D2 (fixLeft d) (fixRight e)
 
@@ -490,29 +490,26 @@ catenate' d (DOR (Triple (O0 br))) f = onlyR' d br f
 -- -- Case 1
 -- catenate' d e f = f $ D2 (fixLeft d) (fixRight e)
 
-onlyL :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Deque (Closed Green) (Closed Green) q i j -> Deque (Closed Green) (Closed Green) q i k
-onlyL _ D0 = error "Impossible"
-onlyL _ DOL{} = error "Impossible"
-onlyL _ DOR{} = error "Impossible"
-onlyL bl@B8{} (D2 (Triple (L0 ll lr)) r)       = D2 (Triple (LG bl (push (S1 ll) D0) lr)) r
-onlyL bl@B8{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG bl (push (S1 ll) (plugR d cap1)) lr)) r
-onlyL bl@B8{} (D2 (Cap (LY ll d lr) cap1) r) = D2 (Triple (pushWith (S1 ll) (plugL cap1 d) (\e -> LG bl e lr))) r
-onlyL bl@B8{} (D2 (Triple (LG ll d lr)) r)     = D2 (Triple (pushWith (S1 ll) d (\e -> LG bl e lr))) r
-onlyL bl@B9{} (D2 (Triple (L0 ll lr)) r)       = D2 (Triple (LG bl (push (S1 ll) D0) lr)) r
-onlyL bl@B9{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG bl (push (S1 ll) (plugR d cap1)) lr)) r
-onlyL bl@B9{} (D2 (Cap (LY ll d lr) cap1) r) = D2 (Triple (pushWith (S1 ll) (plugL cap1 d) (\e -> LG bl e lr))) r
-onlyL bl@B9{} (D2 (Triple (LG ll d lr)) r)     = D2 (Triple (pushWith (S1 ll) d (\e -> LG bl e lr))) r
-onlyL bl      (D2 (Triple (L0 ll lr)) r)       = D2 (Triple (L0 (catenateB bl ll) lr)) r
-onlyL bl@B1{} (D2 (Cap (LO ll (D2 lt rt) lr) cap1) r) = case uncap lt of ViewCap lt2 cap2 -> D2 (Cap (LY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2) r
-onlyL bl@B1{} (D2 (Cap (LO ll (DOR ot) lr) cap1) r) = D2 (Cap (LY (catenateB bl ll) (DOL ot) lr) cap1) r
-onlyL bl@B2{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl@B3{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl@B4{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl@B5{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl@B6{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl@B7{} (D2 (Cap (LO ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugR d cap1
-onlyL bl      (D2 (Cap (LY ll d lr) cap1) r) = D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugL cap1 d
-onlyL bl      (D2 (Triple (LG ll d lr)) r)     = D2 (Triple (LG (catenateB bl ll) d lr)) r
+onlyL :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap LeftTriple (Closed Green) q i j -> Cap LeftTriple (Closed Green) q i k
+onlyL bl@B8{} (Triple (L0 ll lr))              = Triple (LG bl (push (S1 ll) D0) lr)
+onlyL bl@B8{} (Cap (LO ll d lr) cap1)          = Triple (LG bl (push (S1 ll) (plugR d cap1)) lr)
+onlyL bl@B8{} (Cap (LY ll d lr) cap1)          = Triple (pushWith (S1 ll) (plugL cap1 d) (\e -> LG bl e lr))
+onlyL bl@B8{} (Triple (LG ll d lr))            = Triple (pushWith (S1 ll) d (\e -> LG bl e lr))
+onlyL bl@B9{} (Triple (L0 ll lr))              = Triple (LG bl (push (S1 ll) D0) lr)
+onlyL bl@B9{} (Cap (LO ll d lr) cap1)          = Triple (LG bl (push (S1 ll) (plugR d cap1)) lr)
+onlyL bl@B9{} (Cap (LY ll d lr) cap1)          = Triple (pushWith (S1 ll) (plugL cap1 d) (\e -> LG bl e lr))
+onlyL bl@B9{} (Triple (LG ll d lr))            = Triple (pushWith (S1 ll) d (\e -> LG bl e lr))
+onlyL bl      (Triple (L0 ll lr))              = Triple (L0 (catenateB bl ll) lr)
+onlyL bl@B1{} (Cap (LO ll (D2 lt rt) lr) cap1) = case uncap lt of ViewCap lt2 cap2 -> Cap (LY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+onlyL bl@B1{} (Cap (LO ll (DOR ot) lr) cap1)   = Cap (LY (catenateB bl ll) (DOL ot) lr) cap1
+onlyL bl@B2{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl@B3{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl@B4{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl@B5{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl@B6{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl@B7{} (Cap (LO ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugR d cap1
+onlyL bl      (Cap (LY ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2 lr) where d2 = plugL cap1 d
+onlyL bl      (Triple (LG ll d lr))            = Triple (LG (catenateB bl ll) d lr)
 
 onlyL' :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Deque (Closed cl1) (Closed cr1) q i j -> (forall cl2 cr2. Deque (Closed cl2) (Closed cr2) q i k -> g) -> g
 onlyL' _ D0 _ = error "Impossible"
@@ -553,30 +550,26 @@ onlyL' bl@B7{} (D2 (Cap (LO ll d lr) cap1) r)          f = f $ D2 (Triple (LG (c
 onlyL' bl      (D2 (Cap (LY ll d lr) cap1) r)          f = f $ D2 (Triple (LG (catenateB bl ll) d2 lr)) r where d2 = plugL cap1 d
 onlyL' bl      (D2 (Triple (LG ll d lr)) r)            f = f $ D2 (Triple (LG (catenateB bl ll) d lr)) r
 
-
-onlyR :: Deque (Closed Green) (Closed Green) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> Deque (Closed Green) (Closed Green) q i k
-onlyR D0 _ = error "Impossible"
-onlyR DOL{} _ = error "Impossible"
-onlyR DOR{} _ = error "Impossible"
-onlyR (D2 l (Triple (R0 rl rr)))     br@B8{} = D2 l (Triple (RG rl (inject D0 (S1 rr)) br))
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B8{} = D2 l (Triple (RG rl (inject (plugR d cap1) (S1 rr)) br))
-onlyR (D2 l (Cap (RY rl d rr) cap1)) br@B8{} = D2 l (Triple (injectWith (plugL cap1 d) (S1 rr) (\e -> RG rl e br)))
-onlyR (D2 l (Triple (RG rl d rr)))   br@B8{} = D2 l (Triple (injectWith d (S1 rr) (\e -> RG rl e br)))
-onlyR (D2 l (Triple (R0 rl rr)))     br@B9{} = D2 l (Triple (RG rl (inject D0 (S1 rr)) br))
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B9{} = D2 l (Triple (RG rl (inject (plugR d cap1) (S1 rr)) br))
-onlyR (D2 l (Cap (RY rl d rr) cap1)) br@B9{} = D2 l (Triple (injectWith (plugL cap1 d) (S1 rr) (\e -> RG rl e br)))
-onlyR (D2 l (Triple (RG rl d rr)))   br@B9{} = D2 l (Triple (injectWith d (S1 rr) (\e -> RG rl e br)))
-onlyR (D2 l (Triple (R0 rl rr)))       br      = D2 l (Triple (R0 rl (catenateB rr br)))
-onlyR (D2 l (Cap (RO rl (D2 lt rt) rr) cap1)) br@B1{} = case uncap lt of ViewCap lt2 cap2 -> D2 l (Cap (RY rl (D2 lt2 (cap rt cap1)) (catenateB rr br)) cap2)
-onlyR (D2 l (Cap (RO rl (DOR ot) rr) cap1)) br@B1{} = D2 l (Cap (RY rl (DOL ot) (catenateB rr br)) cap1)
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B2{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B3{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B4{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B5{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B6{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RO rl d rr) cap1)) br@B7{} = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugR d cap1
-onlyR (D2 l (Cap (RY rl d rr) cap1)) br      = D2 l (Triple (RG rl d2 (catenateB rr br))) where d2 = plugL cap1 d
-onlyR (D2 l (Triple (RG rl d rr)))     br      = D2 l (Triple (RG rl d (catenateB rr br)))
+onlyR :: Cap RightTriple (Closed Green) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> Cap RightTriple (Closed Green) q i k
+onlyR (Triple (R0 rl rr))              br@B8{} = Triple (RG rl (inject D0 (S1 rr)) br)
+onlyR (Cap (RO rl d rr) cap1)          br@B8{} = Triple (RG rl (inject (plugR d cap1) (S1 rr)) br)
+onlyR (Cap (RY rl d rr) cap1)          br@B8{} = Triple (injectWith (plugL cap1 d) (S1 rr) (\e -> RG rl e br))
+onlyR (Triple (RG rl d rr))            br@B8{} = Triple (injectWith d (S1 rr) (\e -> RG rl e br))
+onlyR (Triple (R0 rl rr))              br@B9{} = Triple (RG rl (inject D0 (S1 rr)) br)
+onlyR (Cap (RO rl d rr) cap1)          br@B9{} = Triple (RG rl (inject (plugR d cap1) (S1 rr)) br)
+onlyR (Cap (RY rl d rr) cap1)          br@B9{} = Triple (injectWith (plugL cap1 d) (S1 rr) (\e -> RG rl e br))
+onlyR (Triple (RG rl d rr))            br@B9{} = Triple (injectWith d (S1 rr) (\e -> RG rl e br))
+onlyR (Triple (R0 rl rr))              br      = Triple (R0 rl (catenateB rr br))
+onlyR (Cap (RO rl (D2 lt rt) rr) cap1) br@B1{} = case uncap lt of ViewCap lt2 cap2 -> Cap (RY rl (D2 lt2 (cap rt cap1)) (catenateB rr br)) cap2
+onlyR (Cap (RO rl (DOR ot) rr) cap1)   br@B1{} = Cap (RY rl (DOL ot) (catenateB rr br)) cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B2{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B3{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B4{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B5{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B6{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RO rl d rr) cap1)          br@B7{} = Triple (RG rl d2 (catenateB rr br)) where d2 = plugR d cap1
+onlyR (Cap (RY rl d rr) cap1)          br      = Triple (RG rl d2 (catenateB rr br)) where d2 = plugL cap1 d
+onlyR (Triple (RG rl d rr))            br      = Triple (RG rl d (catenateB rr br))
 
 onlyR' :: Deque (Closed cl1) (Closed cr1) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> (forall cl2 cr2. Deque (Closed cl2) (Closed cr2) q i k -> g) -> g
 onlyR' D0 _ _ = error "Impossible"

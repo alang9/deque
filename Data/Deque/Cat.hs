@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -213,7 +214,7 @@ push a (D2 l r) = D2 (pushLeftG a l) r
 push a (DOL o)  = DOL (pushOnlyG a o)
 push a (DOR o)  = DOR (pushOnlyG a o)
 
-pushWith :: q j k -> Deque (Closed kl) (Closed kr) q i j -> (forall g. (forall cl cr. Deque (Closed cl) (Closed cr) q i k -> g) -> g)
+pushWith :: q j k -> Deque (Closed kl) (Closed kr) q i j -> ((forall cl cr. Deque (Closed cl) (Closed cr) q i k -> g) -> g)
 pushWith a D0       = \f -> f $ DOL (Triple (O0 (B1 a)))
 pushWith a (D2 l r) = \f -> pushLeft a l (\l' -> f $ D2 l' r)
 pushWith a (DOL o)  = \f -> pushOnly a o (\o' -> f $ DOL o')
@@ -225,13 +226,13 @@ inject (D2 l r) a = D2 l (injectRightG r a)
 inject (DOL o)  a = DOL (injectOnlyG o a)
 inject (DOR o)  a = DOR (injectOnlyG o a)
 
-injectWith :: Deque (Closed kl) (Closed kr) q j k -> q i j -> (forall g. (forall cl cr. Deque (Closed cl) (Closed cr) q i k -> g) -> g)
+injectWith :: Deque (Closed kl) (Closed kr) q j k -> q i j -> ((forall cl cr. Deque (Closed cl) (Closed cr) q i k -> g) -> g)
 injectWith D0       a = \f -> f $ DOL (Triple (O0 (B1 a)))
 injectWith (D2 l r) a = \f -> injectRight r a (\r' -> f $ D2 l r')
 injectWith (DOL o)  a = \f -> injectOnly o a (\o' -> f $ DOL o')
 injectWith (DOR o)  a = \f -> injectOnly o a (\o' -> f $ DOR o')
 
-injectRight :: Cap RightTriple (Closed cl) q j k -> q i j -> (forall g. (forall cr. Cap RightTriple (Closed cr) q i k -> g) -> g)
+injectRight :: Cap RightTriple (Closed cl) q j k -> q i j -> ((forall cr. Cap RightTriple (Closed cr) q i k -> g) -> g)
 injectRight (Triple (R0 bl br))              a      = \f -> f $ Triple (R0 bl (injectB br a))
 injectRight (Cap (RO bl (D2 lt rt) br) cap1) a      = \f -> f $ case uncap lt of ViewCap lt2 cap2 -> Cap (RY bl (D2 lt2 (cap rt cap1)) (injectB br a)) cap2
 injectRight (Cap (RO bl (DOR ot) br) cap1)   a      = \f -> f $ Cap (RY bl (DOL ot) (injectB br a)) cap1
@@ -251,7 +252,7 @@ injectRightG (Cap (RY bl (D2 lt rt) br) cap1) a      = Triple (RG bl (D2 (cap lt
 injectRightG (Cap (RY bl (DOL ot) br) cap1)   a      = Triple (RG bl (DOL (cap ot cap1)) (injectB br a))
 injectRightG (Triple (RG bl d br))            a      = Triple (RG bl d (injectB br a))
 
-injectOnly :: Cap OnlyTriple (Closed cl) q j k -> q i j -> (forall g. (forall cr. Cap OnlyTriple (Closed cr) q i k -> g) -> g)
+injectOnly :: Cap OnlyTriple (Closed cl) q j k -> q i j -> ((forall cr. Cap OnlyTriple (Closed cr) q i k -> g) -> g)
 injectOnly (Triple (O0 b))                        a = \f -> f $ Triple (O0 (injectB b a))
 injectOnly (Cap (OOX bl d br) cap1)               a = \f -> f $ Cap (OOX bl d (injectB br a)) cap1
 injectOnly (Cap (OXO bl@B7{} (D2 lt rt) br) cap1) a = \f -> f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OYX bl (D2 lt2 (cap rt cap1)) (injectB br a)) cap2
@@ -309,7 +310,7 @@ pushOnlyG a (Cap (OYX bl (DOL ot) br@B9{}) cap1)   = Triple (OGG (pushB a bl) (D
 pushOnlyG a (Cap (OGY bl d br) cap1)               = Cap (OGY (pushB a bl) d br) cap1
 pushOnlyG a (Triple (OGG bl d br))                 = Triple (OGG (pushB a bl) d br)
 
-pushLeft :: q j k -> Cap LeftTriple (Closed cl) q i j -> (forall g. (forall cr. Cap LeftTriple (Closed cr) q i k -> g) -> g)
+pushLeft :: q j k -> Cap LeftTriple (Closed cl) q i j -> ((forall cr. Cap LeftTriple (Closed cr) q i k -> g) -> g)
 pushLeft a (Triple (L0 bl br))                   = \f -> f $ Triple (L0 (pushB a bl) br)
 pushLeft a (Cap (LO bl (D2 lt rt) br) cap1)      = \f -> f $ case uncap lt of ViewCap lt2 cap2 -> Cap (LY (pushB a bl) (D2 lt2 (cap rt cap1)) br) cap2
 pushLeft a (Cap (LO bl (DOR ot) br) cap1)        = \f -> f $ Cap (LY (pushB a bl) (DOL ot) br) cap1
@@ -329,7 +330,7 @@ pushLeftG a (Cap (LY bl (D2 lt rt) br) cap1)      = Triple (LG (pushB a bl) (D2 
 pushLeftG a (Cap (LY bl (DOL ot) br) cap1)        = Triple (LG (pushB a bl) (DOL (cap ot cap1)) br)
 pushLeftG a (Triple (LG bl d br))                 = Triple (LG (pushB a bl) d br)
 
-pushOnly :: q j k -> Cap OnlyTriple (Closed cl) q i j -> (forall g. (forall cr. Cap OnlyTriple (Closed cr) q i k -> g) -> g)
+pushOnly :: q j k -> Cap OnlyTriple (Closed cl) q i j -> ((forall cr. Cap OnlyTriple (Closed cr) q i k -> g) -> g)
 pushOnly a (Triple (O0 b))                        = \f -> f $ Triple (O0 (pushB a b))
 pushOnly a (Cap (OOX bl d br@B6{}) cap1)          = \f -> f $ Cap (OXO (pushB a bl) d br) cap1
 pushOnly a (Cap (OOX bl (D2 lt rt) br@B7{}) cap1) = \f -> f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OYX (pushB a bl) (D2 lt2 (cap rt cap1)) br) cap2
@@ -687,7 +688,6 @@ fixLeft d = case d of
         H (Shift rem2) s1r2 -> LG (catenateB p1 rem2) D0 (B2 s1r2 s1r1)
         H (NoShift rem2) s1r2 -> LG (catenateB p1 rem2) D0 (B2 s1r2 s1r1)
 
-
 fixRight :: Deque (Closed Green) (Closed Green) q i j -> Cap RightTriple (Closed Green) q i j
 fixRight d = case d of
   D0 -> error "Impossible"
@@ -941,9 +941,52 @@ popNoRepair d = case d of
       H p1l1 (Shift rem1@B7{}) -> p1l1 :| (CD $ DOL (Cap (OYX rem1 d1 s1) cap1))
       H p1l1 (Shift rem1@B8{}) -> p1l1 :| (CD $ DOL (Cap (OGY rem1 d1 s1) cap1))
       H p1l1 (NoShift rem1)    -> p1l1 :| (CD $ DOL (Cap (OGY rem1 d1 s1) cap1))
+
+popThenPush :: forall lg lr q i k foo m. (Monad m) => Deque (Closed lg) (Closed lr) q i k -> (forall j. q j k -> m (HPair foo q j k)) -> m (View foo (Deque (Closed lg) (Closed lr) q) i k)
+popThenPush d f = case d of
+  D0 -> return Empty
+  D2 (Triple (LG p1 d1 s1)) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Triple (LG (pushB q rem1) d1 s1)) rt
+    H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Triple (LG (pushB q rem1) d1 s1)) rt
+  D2 (Triple (L0 p1 s1)) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Triple (L0 (pushB q rem1) s1)) rt
+    H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Triple (L0 (pushB q rem1) s1)) rt
+  D2 (Triple (LR p1 d1 s1)) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Triple (LR (pushB q rem1) d1 s1)) rt
+  D2 (Cap (LY p1 d1 s1) cap1) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Cap (LY (pushB q rem1) d1 s1) cap1) rt
+  D2 (Cap (LO p1 d1 s1) cap1) rt -> case popB p1 of
+    H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo :| D2 (Cap (LO (pushB q rem1) d1 s1) cap1) rt
+  DOL ot -> only ot >>= \bar -> case bar of H foo c -> return $ foo :| DOL c
+  DOR ot -> only ot >>= \bar -> case bar of H foo c -> return $ foo :| DOR c
+  where
+    only :: Cap OnlyTriple (Closed cl) q i' k -> m (HPair foo (Cap OnlyTriple (Closed cl) q) i' k)
+    only (Triple (O0 p1)) = case popB p1 of
+      H p1l1 NoB -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (O0 (B1 q)))
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (O0 (pushB q rem1)))
+      H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (O0 (pushB q rem1)))
+    only (Triple (OGG p1 d1 s1)) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (OGG (pushB q rem1) d1 s1))
+      H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (OGG (pushB q rem1) d1 s1))
+    only (Triple (ORX p1 d1 s1)) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (ORX (pushB q rem1) d1 s1))
+    only (Triple (OXR p1 d1 s1)) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (OXR (pushB q rem1) d1 s1))
+      H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of  H foo q -> return $ foo `H` (Triple (OXR (pushB q rem1) d1 s1))
+    only (Cap (OXO p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OXO (pushB q rem1) d1 s1) cap1)
+      H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OXO (pushB q rem1) d1 s1) cap1)
+    only (Cap (OOX p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OOX (pushB q rem1) d1 s1) cap1)
+    only (Cap (OYX p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OYX (pushB q rem1) d1 s1) cap1)
+    only (Cap (OGY p1 d1 s1) cap1) = case popB p1 of
+      H p1l1 (Shift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OGY (pushB q rem1) d1 s1) cap1)
+      H p1l1 (NoShift rem1) -> f p1l1 >>= \bar -> case bar of H foo q -> return $ foo `H` (Cap (OGY (pushB q rem1) d1 s1) cap1)
+
 {-
-repairLeft :: Cap LeftTriple (Closed k) q i j -> Cap LeftTriple (Closed Green) q i j
-repairLeft
+repairLeft :: Cap LeftTriple (Closed Red) q i j -> Cap LeftTriple (Closed Green) q i j
+repairLeft (Triple (LR p1 d1 s1)) =
 -}
 
 data Foo a b where

@@ -11,6 +11,16 @@
 
 module Data.Deque.NonCat where
 
+import Data.Type.Bool
+import qualified Data.Sequence as Seq
+
+data Nat = Z | S Nat deriving (Read, Show, Eq, Ord)
+data Color = Red | Yellow | Green deriving (Read, Show, Eq, Ord)
+data Trend = Lo | Hi deriving (Read, Show, Eq, Ord)
+
+type T = True
+type F = False
+
 data Buffer q i j where
   B0 :: Buffer q i i
   B1 :: !(q i j) -> Buffer q i j

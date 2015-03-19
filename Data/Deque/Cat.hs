@@ -551,21 +551,15 @@ onlyL bl      (Triple (LG ll d lr))            = Triple (LG (catenateB bl ll) d 
 
 cat0O :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap OnlyTriple (Closed Green) q i j -> Cap OnlyTriple (Closed Green) q i k
 cat0O _ (Triple O0{})                    = error "Impossible"
-cat0O bl@B8{} (Cap (OXO ll d lr) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap rt of ViewCap rt2 cap2 -> Cap (OXO bl (D2 lt rt2) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  D0 -> error "Impossible"
-cat0O bl@B8{} (Cap (OOX ll d lr@B6{}) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap rt of ViewCap rt2 cap2 -> Cap (OXO bl (D2 lt rt2) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  D0 -> error "Impossible"
-cat0O bl@B8{} (Cap (OOX ll d lr@B7{}) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> Cap (OGY bl (D2 lt2 rt) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
-  D0 -> error "Impossible"
+cat0O bl@B8{} (Cap (OXO ll d lr) cap1)          = case d of
+  D2 lt rt ->  Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
+cat0O bl@B8{} (Cap (OOX ll d lr@B6{}) cap1)          = case d of
+  D2 lt rt -> Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
+cat0O bl@B8{} (Cap (OOX ll d lr@B7{}) cap1)          = case d of
+  D2 lt rt -> case uncap (pushLeftG (S1 ll) lt) of ViewCap lt2 cap2 -> Cap (OGY bl (D2 lt2 (cap rt cap1)) lr) cap2
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
 cat0O bl@B8{} (Cap (OOX ll d lr@B8{}) cap1)          =  Triple (OGG bl (push (S1 ll) (plugR d cap1)) lr)
 cat0O bl@B8{} (Cap (OOX ll d lr@B9{}) cap1)          =  Triple (OGG bl (push (S1 ll) (plugR d cap1)) lr)
 cat0O bl@B8{} (Cap (OGY ll d lr) cap1)          = case d of
@@ -577,21 +571,15 @@ cat0O bl@B8{} (Cap (OYX ll d lr@B7{}) cap1)          = case d of
 cat0O bl@B8{} (Cap (OYX ll d lr@B8{}) cap1)          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> Triple (OGG bl e lr)
 cat0O bl@B8{} (Cap (OYX ll d lr@B9{}) cap1)          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> Triple (OGG bl e lr)
 cat0O bl@B8{} (Triple (OGG ll d lr))            = Triple (pushWith (S1 ll) d (\e -> OGG bl e lr))
-cat0O bl@B9{} (Cap (OXO ll d lr) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap rt of ViewCap rt2 cap2 -> Cap (OXO bl (D2 lt rt2) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  D0 -> error "Impossible"
-cat0O bl@B9{} (Cap (OOX ll d lr@B6{}) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap rt of ViewCap rt2 cap2 -> Cap (OXO bl (D2 lt rt2) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
-  D0 -> error "Impossible"
-cat0O bl@B9{} (Cap (OOX ll d lr@B7{}) cap1)          = case push (S1 ll) (plugR d cap1) of
-  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> Cap (OGY bl (D2 lt2 rt) lr) cap2
-  DOR ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
-  DOL ot -> case uncap ot of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
-  D0 -> error "Impossible"
+cat0O bl@B9{} (Cap (OXO ll d lr) cap1)          = case d of
+  D2 lt rt ->  Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
+cat0O bl@B9{} (Cap (OOX ll d lr@B6{}) cap1)          = case d of
+  D2 lt rt -> Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
+cat0O bl@B9{} (Cap (OOX ll d lr@B7{}) cap1)          = case d of
+  D2 lt rt -> case uncap (pushLeftG (S1 ll) lt) of ViewCap lt2 cap2 -> Cap (OGY bl (D2 lt2 (cap rt cap1)) lr) cap2
+  DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OGY bl (DOL ot2) lr) cap2
 cat0O bl@B9{} (Cap (OOX ll d lr@B8{}) cap1)          =  Triple (OGG bl (push (S1 ll) (plugR d cap1)) lr)
 cat0O bl@B9{} (Cap (OOX ll d lr@B9{}) cap1)          =  Triple (OGG bl (push (S1 ll) (plugR d cap1)) lr)
 cat0O bl@B9{} (Cap (OGY ll d lr) cap1)          = case d of

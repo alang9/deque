@@ -521,10 +521,18 @@ catenate' (DOR (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B9{}))) f = f $ DOL (T
 catenate' (DOR (Triple (O0 bl)))      (DOR (Triple (O0 br)))      f = f $ DOL (Triple (O0 (catenateB bl br)))
 -- -- Case 2:
 catenate' (DOL (Triple (O0 bl))) (D2 lt rt) f = onlyL' bl lt (f . (flip D2 rt))
+catenate' (DOL (Triple (O0 bl))) (DOL ot) f = cat0O' bl ot (f . DOL)
+catenate' (DOL (Triple (O0 bl))) (DOR ot) f = cat0O' bl ot (f . DOL)
 catenate' (DOR (Triple (O0 bl))) (D2 lt rt) f = onlyL' bl lt (f . (flip D2 rt))
+catenate' (DOR (Triple (O0 bl))) (DOL ot) f = cat0O' bl ot (f . DOL)
+catenate' (DOR (Triple (O0 bl))) (DOR ot) f = cat0O' bl ot (f . DOL)
 -- -- Case 3
 catenate' (D2 lt rt) (DOL (Triple (O0 br))) f = onlyR' rt br (f . D2 lt)
+catenate' (DOL ot) (DOL (Triple (O0 br))) f = catO0' ot br (f . DOL)
+catenate' (DOR ot) (DOL (Triple (O0 br))) f = catO0' ot br (f . DOL)
 catenate' (D2 lt rt) (DOR (Triple (O0 br))) f = onlyR' rt br (f . D2 lt)
+catenate' (DOL ot) (DOR (Triple (O0 br))) f = catO0' ot br (f . DOL)
+catenate' (DOR ot) (DOR (Triple (O0 br))) f = catO0' ot br (f . DOL)
 -- Case 1
 catenate' d e f = fixLeft' d $ \d' -> fixRight' e $ \e' -> f $ D2 d' e'
 
@@ -635,6 +643,92 @@ cat0O bl (Cap (OYX ll d lr@B8{}) cap1) = Triple (OGG (catenateB bl ll) (plugL ca
 cat0O bl (Cap (OYX ll d lr@B9{}) cap1) = Triple (OGG (catenateB bl ll) (plugL cap1 d) lr)
 cat0O bl (Triple (OGG ll d lr)) = Triple (OGG (catenateB bl ll) d lr)
 
+cat0O' :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap OnlyTriple (Closed c1) q i j -> (forall c2. Cap OnlyTriple (Closed c2) q i k -> g) -> g
+cat0O' _ (Triple O0{}) _                   = error "Impossible"
+cat0O' bl@B8{} (Cap (OXO ll d lr) cap1) f         = case d of
+  D2 lt rt ->  f $ Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OXO bl (DOR ot2) lr) cap2
+cat0O' bl@B8{} (Cap (OOX ll d lr@B6{}) cap1) f         = case d of
+  D2 lt rt -> f $ Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OXO bl (DOR ot2) lr) cap2
+cat0O' bl@B8{} (Cap (OOX ll d lr@B7{}) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) lt $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 (cap rt cap1)) lr) cap2
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B8{} (Cap (OOX ll d lr@B8{}) cap1) f         = pushWith (S1 ll) (plugR d cap1) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B8{} (Cap (OOX ll d lr@B9{}) cap1) f         = pushWith (S1 ll) (plugR d cap1) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B8{} (Cap (OGY ll d lr) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) (cap lt cap1) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 rt) lr) cap2
+  DOL ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B8{} (Cap (OYX ll d lr@B7{}) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) (cap lt cap1) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 rt) lr) cap2
+  DOL ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B8{} (Cap (OYX ll d lr@B8{}) cap1) f          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B8{} (Cap (OYX ll d lr@B9{}) cap1) f          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B8{} (Triple (OGG ll d lr)) f                 = f $ Triple (pushWith (S1 ll) d (\e -> OGG bl e lr))
+cat0O' bl@B9{} (Cap (OXO ll d lr) cap1) f         = case d of
+  D2 lt rt ->  f $ Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OXO bl (DOR ot2) lr) cap2
+cat0O' bl@B9{} (Cap (OOX ll d lr@B6{}) cap1) f         = case d of
+  D2 lt rt -> f $ Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OXO bl (DOR ot2) lr) cap2
+cat0O' bl@B9{} (Cap (OOX ll d lr@B7{}) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) lt $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 (cap rt cap1)) lr) cap2
+  DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B9{} (Cap (OOX ll d lr@B8{}) cap1) f         = pushWith (S1 ll) (plugR d cap1) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B9{} (Cap (OOX ll d lr@B9{}) cap1) f         = pushWith (S1 ll) (plugR d cap1) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B9{} (Cap (OGY ll d lr) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) (cap lt cap1) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 rt) lr) cap2
+  DOL ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B9{} (Cap (OYX ll d lr@B7{}) cap1) f         = case d of
+  D2 lt rt -> pushLeft (S1 ll) (cap lt cap1) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (OGY bl (D2 lt2 rt) lr) cap2
+  DOL ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OGY bl (DOL ot2) lr) cap2
+cat0O' bl@B9{} (Cap (OYX ll d lr@B8{}) cap1) f          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B9{} (Cap (OYX ll d lr@B9{}) cap1) f          =  pushWith (S1 ll) (plugL cap1 d) $ \e -> f $ Triple (OGG bl e lr)
+cat0O' bl@B9{} (Triple (OGG ll d lr)) f                 = f $ Triple (pushWith (S1 ll) d (\e -> OGG bl e lr))
+cat0O' bl (Cap (OXO ll d lr) cap1) f                    = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B1{} (Cap (OOX ll d lr@B6{}) cap1) f          = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B1{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f = case uncap lt of ViewCap lt2 cap2 -> f $ Cap (OYX (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B1{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1) f   = f $ Cap (OYX (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B1{} (Cap (OOX ll (D2 lt rt) lr@B8{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OYX (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B1{} (Cap (OOX ll (DOR ot) lr@B8{}) cap1)   f  = f $ Cap (OYX (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B1{} (Cap (OOX ll (D2 lt rt) lr@B9{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OYX (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B1{} (Cap (OOX ll (DOR ot) lr@B9{}) cap1)   f  = f $ Cap (OYX (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B2{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B2{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B2{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B2{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B2{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B3{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B3{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B3{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B3{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B3{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B4{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B4{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B4{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B4{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B4{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B5{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B5{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B5{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B5{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B5{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B6{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B6{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B6{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B6{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B6{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B7{} (Cap (OOX ll d lr@B6{}) cap1)          f  = f $ Cap (OXO (catenateB bl ll) d lr) cap1
+cat0O' bl@B7{} (Cap (OOX ll (D2 lt rt) lr@B7{}) cap1) f  = f $ case uncap lt of ViewCap lt2 cap2 -> Cap (OGY (catenateB bl ll) (D2 lt2 (cap rt cap1)) lr) cap2
+cat0O' bl@B7{} (Cap (OOX ll (DOR ot) lr@B7{}) cap1)   f  = f $ Cap (OGY (catenateB bl ll) (DOL ot) lr) cap1
+cat0O' bl@B7{} (Cap (OOX ll d lr@B8{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl@B7{} (Cap (OOX ll d lr@B9{}) cap1)          f  = f $ Triple (OGG (catenateB bl ll) (plugR d cap1) lr)
+cat0O' bl (Cap (OGY ll d lr) cap1)                    f  = f $ Cap (OGY (catenateB bl ll) d lr) cap1
+cat0O' bl (Cap (OYX ll d lr@B7{}) cap1)               f  = f $ Cap (OGY (catenateB bl ll) d lr) cap1
+cat0O' bl (Cap (OYX ll d lr@B8{}) cap1)               f  = f $ Triple (OGG (catenateB bl ll) (plugL cap1 d) lr)
+cat0O' bl (Cap (OYX ll d lr@B9{}) cap1)               f  = f $ Triple (OGG (catenateB bl ll) (plugL cap1 d) lr)
+cat0O' bl (Triple (OGG ll d lr))                      f  = f $ Triple (OGG (catenateB bl ll) d lr)
+
 catO0 :: Cap OnlyTriple (Closed Green) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> Cap OnlyTriple (Closed Green) q i k
 catO0 (Triple O0{}) _                   = error "Impossible"
 catO0 (Cap (OOX rl d rr) cap1) br@B8{} = case d of
@@ -708,6 +802,80 @@ catO0 (Cap (OXO rl@B9{} d rr) cap1) br@B7{} = Triple (OGG rl (plugR d cap1) (cat
 catO0 (Cap (OYX rl d rr) cap1) br = Cap (OYX rl d (catenateB rr br)) cap1
 catO0 (Cap (OGY rl d rr) cap1) br = Triple (OGG rl (plugL cap1 d) (catenateB rr br))
 catO0 (Triple (OGG rl d rr)) br = Triple (OGG rl d (catenateB rr br))
+
+catO0' :: Cap OnlyTriple (Closed c1) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> (forall c2. Cap OnlyTriple (Closed c2) q i k -> g) -> g
+catO0' (Triple O0{}) _ _                  = error "Impossible"
+catO0' (Cap (OOX rl d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> case uncap e of ViewCap rt2 cap2 -> f $ Cap (OOX rl (D2 lt rt2) br) cap2
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OOX rl (DOR ot2) br) cap2
+catO0' (Cap (OXO rl@B7{} d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Cap (OYX rl (D2 lt2 e) br) cap2
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OYX rl (DOL ot2) br) cap2
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Cap (OYX rl d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Cap (OYX rl (D2 lt e) br) cap1
+  DOL ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OYX rl (DOL ot2) br) cap2
+catO0' (Cap (OGY rl d rr) cap1) br@B8{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Triple (OGG rl (D2 (cap lt cap1) e) br)
+  DOL ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Triple (OGG rl d rr)) br@B8{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOL ot -> injectOnly ot (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+  DOR ot -> injectOnly ot (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+  D0 -> f $ Triple (OGG rl (DOL (Triple (O0 (B1 (S1 rr))))) br)
+catO0' (Cap (OOX rl d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> case uncap e of ViewCap rt2 cap2 -> f $ Cap (OOX rl (D2 lt rt2) br) cap2
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OOX rl (DOR ot2) br) cap2
+catO0' (Cap (OXO rl@B7{} d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Cap (OYX rl (D2 lt2 e) br) cap2
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OYX rl (DOL ot2) br) cap2
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Cap (OYX rl d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Cap (OYX rl (D2 lt e) br) cap1
+  DOL ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OYX rl (DOL ot2) br) cap2
+catO0' (Cap (OGY rl d rr) cap1) br@B9{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Triple (OGG rl (D2 (cap lt cap1) e) br)
+  DOL ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+catO0' (Triple (OGG rl d rr)) br@B9{} f = case d of
+  D2 lt rt -> injectRight rt (S1 rr) $ \e -> f $ Triple (OGG rl (D2 lt e) br)
+  DOL ot -> injectOnly ot (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+  DOR ot -> injectOnly ot (S1 rr) $ \e -> f $ Triple (OGG rl (DOL e) br)
+  D0 -> f $ Triple (OGG rl (DOL (Triple (O0 (B1 (S1 rr))))) br)
+catO0' (Cap (OOX rl d rr) cap1) br f = f $ Cap (OOX rl d (catenateB rr br)) cap1
+catO0' (Cap (OXO rl@B7{} d rr) cap1) br f = case d of
+  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> f $ Cap (OYX rl (D2 lt2 (cap rt cap1)) (catenateB rr br)) cap2
+  DOR ot -> f $ Cap (OYX rl (DOL ot) (catenateB rr br)) cap1
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B1{} f = case d of
+  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> f $ Cap (OGY rl (D2 lt2 (cap rt cap1)) (catenateB rr br)) cap2
+  DOR ot -> f $ Cap (OGY rl (DOL ot) (catenateB rr br)) cap1
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B2{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B3{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B4{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B5{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B6{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B8{} d rr) cap1) br@B7{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B1{} f = case d of
+  D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> f $ Cap (OGY rl (D2 lt2 (cap rt cap1)) (catenateB rr br)) cap2
+  DOR ot -> f $ Cap (OGY rl (DOL ot) (catenateB rr br)) cap1
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B2{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B3{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B4{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B5{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B6{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OXO rl@B9{} d rr) cap1) br@B7{} f = f $ Triple (OGG rl (plugR d cap1) (catenateB rr br))
+catO0' (Cap (OYX rl d rr) cap1) br f = f $ Cap (OYX rl d (catenateB rr br)) cap1
+catO0' (Cap (OGY rl d rr) cap1) br f = f $ Triple (OGG rl (plugL cap1 d) (catenateB rr br))
+catO0' (Triple (OGG rl d rr)) br f = f $ Triple (OGG rl d (catenateB rr br))
 
 onlyL' :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap LeftTriple (Closed cl1) q i j -> (forall cl2. Cap LeftTriple (Closed cl2) q i k -> g) -> g
 onlyL' bl@B8{} (Triple (L0 ll lr))              f = f $ Triple (LG bl (push (S1 ll) D0) lr)

@@ -1953,11 +1953,3 @@ pop d = popNoRepair d $ \v -> case v of
   a :| DOL ot -> a :| DOL (repairCap ot)
   a :| DOR ot -> a :| DOR (repairCap ot)
   a :| D0 -> a :| D0
-
-data Foo a b where
-  F :: !Int -> Foo () ()
-
-instance NFData (Foo a b) where
-  rnf !_ = ()
-
-deriving instance Show (Foo a b)

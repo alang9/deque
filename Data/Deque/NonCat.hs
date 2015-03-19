@@ -676,8 +676,3 @@ instance Snoc Deque where
   (Deque (BigG (GG b (B3 i j k)) y z@TinyL{}))      |> a = Deque $ BigY (GY b (B4 i j k a)) y z
   (Deque (BigG (GG b (B3 i j k)) y z@BigR{}))       |> a = Deque $ BigY (GY b (B4 i j k a)) y (fixup' z)
   (Deque (BigG (GG b (B3 i j k)) y z@BigG{}))       |> a = Deque $ BigY (GY b (B4 i j k a)) y z
-
-data Foo a b where
-  F :: Int -> Foo () ()
-
-deriving instance Show (Foo a b)

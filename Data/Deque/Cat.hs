@@ -1001,72 +1001,21 @@ fixLeft d = case d of
     only :: Cap OnlyTriple (Closed Green) q i j -> Cap LeftTriple (Closed Green) q i j
     only (Triple O0{}) = error "Impossible"
     only (Triple (OGG p1 D0 s1)) = Triple (onlyPS p1 s1)
-    only (Triple (OGG p1 d1 s1)) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-             H (NoShift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-    only (Cap (OOX p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> foo $ inject (plugR d1 c) (S1 rem2)
-               where
-                 foo D0 = error "Impossible"
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) c2
-                 foo (DOL ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-                 foo (DOR ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> foo $ inject (plugR d1 c) (S1 rem2)
-               where
-                 foo D0 = error "Impossible"
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) c2
-                 foo (DOL ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-                 foo (DOR ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-             H (NoShift rem2) s1r2 -> foo $ inject (plugR d1 c) (S1 rem2)
-               where
-                 foo D0 = error "Impossible"
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) c2
-                 foo (DOL ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-                 foo (DOR ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-    only (Cap (OXO p1@B7{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> foo $ inject (plugR d1 c) (S1 rem2)
-               where
-                 foo D0 = error "Impossible"
-                 foo (D2 lt rt) = case uncap lt of ViewCap lt2 c2 -> Cap (LY p1 (D2 lt2 rt) (B2 s1r2 s1r1)) c2
-                 foo (DOL ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-                 foo (DOR ot) = case uncap ot of ViewCap ot2 c2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-    only (Cap (OXO p1@B8{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple (LG p1 (inject (plugR d1 c) (S1 rem2)) (B2 s1r2 s1r1))
-    only (Cap (OXO p1@B9{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple (LG p1 (inject (plugR d1 c) (S1 rem2)) (B2 s1r2 s1r1))
-    only (Cap (OYX p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 c2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 c2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-             H (NoShift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 c2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-    only (Cap (OGY p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> Triple (LG p1 (D2 lt e) (B2 s1r2 s1r1))
-               DOL ot -> Triple (LG p1 (DOL (injectOnlyG ot (S1 rem2))) (B2 s1r2 s1r1))
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
+    only (Triple (OGG p1 d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
+    only (Cap (OOX p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> case uncap (injectRightG (cap rt c) (S1 rem2)) of ViewCap rt2 cap2 -> Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) cap2
+      DOR ot -> case uncap (injectOnlyG (cap ot c) (S1 rem2)) of ViewCap ot2 cap2 -> Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OXO p1@B7{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> Cap (LY p1 (D2 lt2 (injectRightG (cap rt c) (S1 rem2))) (B2 s1r2 s1r1)) cap2
+      DOR ot -> case uncap (injectOnlyG (cap ot c) (S1 rem2)) of ViewCap ot2 cap2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OXO p1@B8{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> Triple (LG p1 (inject (plugR d1 c) (S1 rem2)) (B2 s1r2 s1r1))
+    only (Cap (OXO p1@B9{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> Triple (LG p1 (inject (plugR d1 c) (S1 rem2)) (B2 s1r2 s1r1))
+    only (Cap (OYX p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> injectRight rt (S1 rem2) $ \e -> Cap (LY p1 (D2 lt e) (B2 s1r2 s1r1)) c
+      DOL ot -> case uncap (injectOnlyG (cap ot c) (S1 rem2)) of ViewCap ot2 cap2 -> Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OGY p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> injectRight rt (S1 rem2) $ \e -> Triple (LG p1 (D2 (cap lt c) e) (B2 s1r2 s1r1))
+      DOL ot -> Triple (LG p1 (DOL (injectOnlyG (cap ot c) (S1 rem2))) (B2 s1r2 s1r1))
 
     onlyPS :: Buffer F F F F F F F a8 a9 q j k -> Buffer F F F F F F F b8 b9 q i j -> LeftTriple (Closed Green) q i k
     onlyPS p1 s1@B9{} = case popB s1 of
@@ -1188,95 +1137,35 @@ fixLeft' d f = case d of
     only (Triple (OGG p1 D0 s1)) = onlyPS p1 s1
     only (Triple (ORX p1 D0 s1)) = onlyPS p1 s1
     only (Triple (OXR p1 D0 s1)) = onlyPS p1 s1
-    only (Triple (OGG p1 d1 s1)) = f $ case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-             H (NoShift rem2) s1r2 -> Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
-    only (Triple (ORX p1 d1 s1)) = f $ case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ LR p1 (inject d1 (S1 rem2)) (B2 s1r2 s1r1)
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> Triple $ LR p1 (inject d1 (S1 rem2)) (B2 s1r2 s1r1)
-             H (NoShift rem2) s1r2 -> Triple $ LR p1 (inject d1 (S1 rem2)) (B2 s1r2 s1r1)
-    only (Triple (OXR p1@B6{} d1 s1)) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case inject d1 (S1 rem2) of
-                 D0 -> error "Impossible"
-                 (D2 lt rt) -> case uncap rt of ViewCap rt2 c2 -> f $ Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) c2
-                 (DOL ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-                 (DOR ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) c2
-    only (Triple (OXR p1@B7{} d1 s1)) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith d1 (S1 rem2) $ \foo -> case foo of
-                 D0 -> error "Impossible"
-                 (D2 lt rt) -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (LY p1 (D2 lt2 rt) (B2 s1r2 s1r1)) c2
-                 (DOL ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-                 (DOR ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-    only (Triple (OXR p1@B8{} d1 s1)) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith d1 (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
-    only (Triple (OXR p1@B9{} d1 s1)) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith d1 (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
+    only (Triple (OGG p1 d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> f $ Triple $ injectWith d1 (S1 rem2) $ (\e -> LG p1 e (B2 s1r2 s1r1))
+    only (Cap (OOX p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> injectRight (cap rt c) (S1 rem2) $ \e -> case uncap e of ViewCap rt2 cap2 -> f $ Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) cap2
+      DOR ot -> injectOnly (cap ot c) (S1 rem2) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OXO p1@B7{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> injectRight (cap rt c) (S1 rem2) $ \e -> f $ Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) cap2
+      DOR ot -> injectOnly (cap ot c) (S1 rem2) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OXO p1@B8{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> injectWith (plugR d1 c) (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
+    only (Cap (OXO p1@B9{} d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> injectWith (plugR d1 c) (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
+    only (Cap (OYX p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> injectRight rt (S1 rem2) $ \e -> f $ Cap (LY p1 (D2 lt e) (B2 s1r2 s1r1)) c
+      DOL ot -> injectOnly (cap ot c) (S1 rem2) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+    only (Cap (OGY p1 d1 s1) c) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> injectRight rt (S1 rem2) $ \e -> f $ Triple (LG p1 (D2 (cap lt c) e) (B2 s1r2 s1r1))
+      DOL ot -> injectOnly (cap ot c) (S1 rem2) $ \e -> f $ Triple (LG p1 (DOL e) (B2 s1r2 s1r1))
 
-    only (Cap (OOX p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case (plugR d1 c) of -- (S1 rem2) foo
-               D2 lt rt -> injectRight rt (S1 rem2) $ \rt2 -> case uncap rt2 of ViewCap rt3 c3 -> f $ Cap (LO p1 (D2 lt rt3) (B2 s1r2 s1r1)) c3
-               DOL ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               DOR ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               D0 -> error "Impossible"
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case (plugR d1 c) of -- (S1 rem2) foo
-               D2 lt rt -> injectRight rt (S1 rem2) $ \rt2 -> case uncap rt2 of ViewCap rt3 c3 -> f $ Cap (LO p1 (D2 lt rt3) (B2 s1r2 s1r1)) c3
-               DOL ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               DOR ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               D0 -> error "Impossible"
-             H (NoShift rem2) s1r2 -> case (plugR d1 c) of -- (S1 rem2) foo
-               D2 lt rt -> injectRight rt (S1 rem2) $ \rt2 -> case uncap rt2 of ViewCap rt3 c3 -> f $ Cap (LO p1 (D2 lt rt3) (B2 s1r2 s1r1)) c3
-               DOL ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               DOR ot -> injectOnly ot (S1 rem2) $ \ot2 -> case uncap ot2 of ViewCap ot3 c3 -> f $ Cap (LO p1 (DOR ot3) (B2 s1r2 s1r1)) c3
-               D0 -> error "Impossible"
-    only (Cap (OXO p1@B7{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith (plugR d1 c) (S1 rem2) $ \foo -> case foo of
-                 D0 -> error "Impossible"
-                 (D2 lt rt) -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (LY p1 (D2 lt2 rt) (B2 s1r2 s1r1)) c2
-                 (DOL ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-                 (DOR ot) -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-    only (Cap (OXO p1@B8{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith (plugR d1 c) (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
-    only (Cap (OXO p1@B9{} d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> injectWith (plugR d1 c) (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
-    only (Cap (OYX p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> injectOnly ot (S1 rem2) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-           H (NoShift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> injectOnly ot (S1 rem2) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-             H (NoShift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (LY p1 (D2 lt2 e) (B2 s1r2 s1r1)) c2
-               DOL ot -> injectOnly ot (S1 rem2) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-    only (Cap (OGY p1 d1 s1) c) = case ejectB s1 of
-           H (Shift rem1) s1r1 -> case ejectB rem1 of
-             H (Shift rem2) s1r2 -> case plugL c d1 of
-               D2 lt rt -> injectRight rt (S1 rem2) $ \e -> f $ Triple (LG p1 (D2 lt e) (B2 s1r2 s1r1))
-               DOL ot -> injectOnly ot (S1 rem2) $ \e -> f $ Triple (LG p1 (DOL e) (B2 s1r2 s1r1))
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
+    only (Triple (ORX p1 d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> f $ Triple (LR p1 (inject d1 (S1 rem2)) (B2 s1r2 s1r1))
+    only (Triple (OXR p1@B6{} d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> case uncap (injectRightG rt (S1 rem2)) of ViewCap rt2 cap2 -> f $ Cap (LO p1 (D2 lt rt2) (B2 s1r2 s1r1)) cap2
+      DOL ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 cap2 -> f $ Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) cap2
+      DOR ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 cap2 -> f $ Cap (LO p1 (DOR ot2) (B2 s1r2 s1r1)) cap2
+      D0 -> onlyPS p1 s1
+    only (Triple (OXR p1@B7{} d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> case d1 of
+      D2 lt rt -> case uncap lt of ViewCap lt2 cap2 -> f $ Cap (LY p1 (D2 lt2 (injectRightG rt (S1 rem2))) (B2 s1r2 s1r1)) cap2
+      DOL ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 cap2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+      DOR ot -> case uncap (injectOnlyG ot (S1 rem2)) of ViewCap ot2 cap2 -> f $ Cap (LY p1 (DOL ot2) (B2 s1r2 s1r1)) cap2
+      D0 -> onlyPS p1 s1
+    only (Triple (OXR p1@B8{} d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> injectWith d1 (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
+    only (Triple (OXR p1@B9{} d1 s1)) = aux s1 $ \rem2 s1r2 s1r1 -> injectWith d1 (S1 rem2) $ \e -> f $ Triple (LG p1 e (B2 s1r2 s1r1))
 
     onlyPS :: Buffer F F F F a5 a6 a7 a8 a9 q j' j -> Buffer F F F F b5 b6 b7 b8 b9 q i j' -> g -- LeftTriple (Closed Green) q i k
     onlyPS p1 s1@B9{} = case popB s1 of
@@ -1383,86 +1272,26 @@ fixRight d = case d of
     only :: Cap OnlyTriple (Closed Green) q i j -> Cap RightTriple (Closed Green) q i j
     only (Triple O0{}) = error "Impossible"
     only (Triple (OGG p1 D0 s1)) = Triple (onlyPS p1 s1)
-    only (Triple (OGG p1 d1 s1)) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-             H p1l2 (NoShift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-    only (Cap (OOX p1 d1 s1@B6{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> foo $ push (S1 rem2) (plugR d1 c)
-               where
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (RO (B2 p1l1 p1l2) (D2 lt rt2) s1) c2
-                 foo (DOL ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo (DOR ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo D0 = error "Impossible"
-    only (Cap (OOX p1 d1 s1@B7{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> foo $ push (S1 rem2) (plugR d1 c)
-               where
-                 foo (D2 lt rt) = case uncap lt of ViewCap lt2 c2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-                 foo (DOL ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-                 foo (DOR ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-                 foo D0 = error "Impossible"
-    only (Cap (OOX p1 d1 s1@B8{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple (RG (B2 p1l1 p1l2) (push (S1 rem2) (plugR d1 c)) s1)
-    only (Cap (OOX p1 d1 s1@B9{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple (RG (B2 p1l1 p1l2) (push (S1 rem2) (plugR d1 c)) s1)
-    only (Cap (OXO p1 d1 s1) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> foo $ push (S1 rem2) (plugR d1 c)
-               where
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (RO (B2 p1l1 p1l2) (D2 lt rt2) s1) c2
-                 foo (DOL ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo (DOR ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo D0 = error "Impossible"
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> foo $ push (S1 rem2) (plugR d1 c)
-               where
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (RO (B2 p1l1 p1l2) (D2 lt rt2) s1) c2
-                 foo (DOL ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo (DOR ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo D0 = error "Impossible"
-             H p1l2 (NoShift rem2) -> foo $ push (S1 rem2) (plugR d1 c)
-               where
-                 foo (D2 lt rt) = case uncap rt of ViewCap rt2 c2 -> Cap (RO (B2 p1l1 p1l2) (D2 lt rt2) s1) c2
-                 foo (DOL ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo (DOR ot)   = case uncap ot of ViewCap ot2 c2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 foo D0 = error "Impossible"
-    only (Cap (OYX p1 d1 s1@B7{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 c2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> case uncap (pushOnlyG (S1 rem2) ot) of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-    only (Cap (OYX p1 d1 s1@B8{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> pushWith (S1 rem2) (plugL c d1) $ \e -> Triple (RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OYX p1 d1 s1@B9{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> pushWith (S1 rem2) (plugL c d1) $ \e -> Triple (RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OGY p1 d1 s1) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 c2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> case uncap (pushOnlyG (S1 rem2) ot) of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 c2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> case uncap (pushOnlyG (S1 rem2) ot) of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-             H p1l2 (NoShift rem2) -> case plugL c d1 of
-               D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 c2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> case uncap (pushOnlyG (S1 rem2) ot) of ViewCap ot2 c2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
+    only (Triple (OGG p1 d1 s1)) = aux p1 $ \p1l1 p1l2 rem2 -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
+    only (Cap (OOX p1 d1 s1@B6{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
+      DOR ot -> case uncap (pushOnlyG (S1 rem2) (cap ot c)) of ViewCap ot2 cap2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) cap2
+    only (Cap (OOX p1 d1 s1@B7{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 cap2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 (cap rt c)) s1) cap2
+      DOR ot -> case uncap (pushOnlyG (S1 rem2) (cap ot c)) of ViewCap ot2 cap2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
+    only (Cap (OOX p1 d1 s1@B8{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> Triple (RG (B2 p1l1 p1l2) (push (S1 rem2) (plugR d1 c)) s1)
+    only (Cap (OOX p1 d1 s1@B9{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> Triple (RG (B2 p1l1 p1l2) (push (S1 rem2) (plugR d1 c)) s1)
+    only (Cap (OXO p1 d1 s1) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
+      DOR ot -> case uncap (pushOnlyG (S1 rem2) (cap ot c)) of ViewCap ot2 cap2 -> Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) cap2
+    only (Cap (OYX p1 d1 s1@B7{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> case uncap (pushLeftG (S1 rem2) (cap lt c)) of ViewCap lt2 cap2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
+      DOL ot -> case uncap (pushOnlyG (S1 rem2) (cap ot c)) of ViewCap ot2 cap2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
+    only (Cap (OYX p1 d1 s1@B8{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugL c d1) $ \e -> Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OYX p1 d1 s1@B9{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugL c d1) $ \e -> Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OGY p1 d1 s1) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> case uncap (pushLeftG (S1 rem2) (cap lt c)) of ViewCap lt2 cap2 -> Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
+      DOL ot -> case uncap (pushOnlyG (S1 rem2) (cap ot c)) of ViewCap ot2 cap2 -> Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
 
     onlyPS :: Buffer F F F F F F F a8 a9 q j k -> Buffer F F F F F F F b8 b9 q i j -> RightTriple (Closed Green) q i k
     onlyPS p1@B9{} s1 = case ejectB p1 of
@@ -1584,126 +1413,56 @@ fixRight' d f = case d of
     only (Triple (OGG p1 D0 s1)) = onlyPS p1 s1
     only (Triple (ORX p1 D0 s1)) = onlyPS p1 s1
     only (Triple (OXR p1 D0 s1)) = onlyPS p1 s1
-    only (Triple (OGG p1 d1 s1)) = f $ case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-             H p1l2 (NoShift rem2) -> Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
-    only (Triple (ORX p1 d1 s1@B5{})) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 (DOL ot)   -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 D0 -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-    only (Triple (ORX p1 d1 s1@B6{})) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> case uncap rt of ViewCap rt2 cap2 -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt2) s1) cap2
-                 (DOR ot)   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 (DOL ot)   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-                 D0 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR Opening) s1) (O0 (B1 (S1 rem2)))
-    only (Triple (ORX p1 d1 s1@B7{})) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
-                 (DOR ot)   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-                 (DOL ot)   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-                 D0 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL Opening) s1) (O0 (B1 (S1 rem2)))
-    only (Triple (ORX p1 d1 s1@B8{})) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RG (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
-                 (DOL ot)   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
-                 D0 -> f $ Triple (RG (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-    only (Triple (ORX p1 d1 s1@B9{})) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RG (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
-                 (DOL ot)   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
-                 D0 -> f $ Triple (RG (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-    only (Cap (OOX p1 d1 s1@B6{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
-                 (DOR ot)   -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-    only (Cap (OOX p1 d1 s1@B7{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> pushWith (S1 rem2) (plugR d1 c) $ \foo -> case foo of
-               (D2 lt rt) -> case uncap lt of ViewCap lt2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               (DOL ot)   -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               (DOR ot)   -> case uncap ot of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               D0 -> error "Impossible"
-    only (Cap (OOX p1 d1 s1@B8{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> f $ Triple (pushWith (S1 rem2) (plugR d1 c) $ \e -> RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OOX p1 d1 s1@B9{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> f $ Triple (pushWith (S1 rem2) (plugR d1 c) $ \e -> RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OXO p1 d1 s1) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
-                 (DOR ot)   -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
-                 (DOR ot)   -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-             H p1l2 (NoShift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
-                 (DOR ot)   -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
-    only (Triple (OXR p1 d1 s1)) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 (DOL ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 D0 -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 (DOL ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 D0 -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-             H p1l2 (NoShift rem2) -> case d1 of
-                 (D2 lt rt) -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
-                 (DOR ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 (DOL ot)   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
-                 D0 -> f $ Triple (RR (B2 p1l1 p1l2) (DOR (Triple (O0 (B1 (S1 rem2))))) s1)
-    only (Cap (OYX p1 d1 s1@B7{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> pushLeft (S1 rem2) lt $ \e -> case uncap e of ViewCap lt2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-    only (Cap (OYX p1 d1 s1@B8{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> pushWith (S1 rem2) (plugL c d1) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OYX p1 d1 s1@B9{}) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> pushWith (S1 rem2) (plugL c d1) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
-    only (Cap (OGY p1 d1 s1) c) = case popB p1 of
-           H p1l1 (Shift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> pushLeft (S1 rem2) lt $ \e -> case uncap e of ViewCap lt2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-           H p1l1 (NoShift rem1) -> case popB rem1 of
-             H p1l2 (Shift rem2) -> case plugL c d1 of
-               D2 lt rt -> pushLeft (S1 rem2) lt $ \e -> case uncap e of ViewCap lt2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
-             H p1l2 (NoShift rem2) -> case plugL c d1 of
-               D2 lt rt -> pushLeft (S1 rem2) lt $ \e -> case uncap e of ViewCap lt2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) c2
-               DOL ot -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
-               DOR _ -> error "Impossible"
-               D0 -> error "Impossible"
+    only (Triple (OGG p1 d1 s1)) = aux p1 $ \p1l1 p1l2 rem2 -> f $ Triple $ pushWith (S1 rem2) d1 $ \e -> RG (B2 p1l1 p1l2) e s1
+    only (Cap (OOX p1 d1 s1@B6{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
+      DOR ot -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) cap2
+    only (Cap (OOX p1 d1 s1@B7{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> pushLeft (S1 rem2) lt $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 (cap rt c)) s1) cap2
+      DOR ot -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
+    only (Cap (OOX p1 d1 s1@B8{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugR d1 c) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OOX p1 d1 s1@B9{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugR d1 c) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OXO p1 d1 s1) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1) c
+      DOR ot -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) cap2
+    only (Cap (OYX p1 d1 s1@B7{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> pushLeft (S1 rem2) (cap lt c) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
+      DOL ot -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
+    only (Cap (OYX p1 d1 s1@B8{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugL c d1) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OYX p1 d1 s1@B9{}) c) = aux p1 $ \p1l1 p1l2 rem2 -> pushWith (S1 rem2) (plugL c d1) $ \e -> f $ Triple (RG (B2 p1l1 p1l2) e s1)
+    only (Cap (OGY p1 d1 s1) c) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> pushLeft (S1 rem2) (cap lt c) $ \e -> case uncap e of ViewCap lt2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
+      DOL ot -> pushOnly (S1 rem2) (cap ot c) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) cap2
+    only (Triple (ORX p1 d1 s1@B5{})) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
+      DOL ot -> f $ Triple (RR (B2 p1l1 p1l2) (DOL (pushOnlyG (S1 rem2) ot)) s1)
+      DOR ot -> f $ Triple (RR (B2 p1l1 p1l2) (DOL (pushOnlyG (S1 rem2) ot)) s1)
+      D0 -> onlyPS p1 s1
+    only (Triple (ORX p1 d1 s1@B6{})) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> case uncap rt of ViewCap rt2 cap2 -> f $ Cap (RO (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt2) s1) cap2
+      DOR ot   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
+      DOL ot   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RO (B2 p1l1 p1l2) (DOR ot2) s1) c2
+      D0 -> onlyPS p1 s1
+    only (Triple (ORX p1 d1 s1@B7{})) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> case uncap (pushLeftG (S1 rem2) lt) of ViewCap lt2 cap2 -> f $ Cap (RY (B2 p1l1 p1l2) (D2 lt2 rt) s1) cap2
+      DOR ot   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
+      DOL ot   -> pushOnly (S1 rem2) ot $ \e -> case uncap e of ViewCap ot2 c2 -> f $ Cap (RY (B2 p1l1 p1l2) (DOL ot2) s1) c2
+      D0 -> onlyPS p1 s1
+    only (Triple (ORX p1 d1 s1@B8{})) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Triple (RG (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
+      DOR ot   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
+      DOL ot   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
+      D0 -> onlyPS p1 s1
+    only (Triple (ORX p1 d1 s1@B9{})) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Triple (RG (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
+      DOR ot   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
+      DOL ot   -> pushOnly (S1 rem2) ot $ \ot2 -> f $ Triple (RG (B2 p1l1 p1l2) (DOL ot2) s1)
+      D0 -> onlyPS p1 s1
+    only (Triple (OXR p1 d1 s1)) = aux p1 $ \p1l1 p1l2 rem2 -> case d1 of
+      D2 lt rt -> f $ Triple (RR (B2 p1l1 p1l2) (D2 (pushLeftG (S1 rem2) lt) rt) s1)
+      DOR ot   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
+      DOL ot   ->  f $ Triple (RR (B2 p1l1 p1l2) (DOR (pushOnlyG (S1 rem2) ot)) s1)
+      D0 -> onlyPS p1 s1
 
     onlyPS :: Buffer F F F F a5 a6 a7 a8 a9 q j' j -> Buffer F F F F b5 b6 b7 b8 b9 q i j' -> g
     onlyPS p1@B9{} s1 = case ejectB p1 of

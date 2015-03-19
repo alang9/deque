@@ -456,35 +456,14 @@ catenate :: Deque (Closed Green) (Closed Green) q j k -> Deque (Closed Green) (C
 -- Trivial
 catenate D0 a = a
 catenate a D0 = a
--- Case 4:
-catenate (DOL (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl)))      (DOL (Triple (O0 br)))      = DOL (Triple (O0 (catenateB bl br)))
-catenate (DOL (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOL (Triple (O0 bl)))      (DOR (Triple (O0 br)))      = DOL (Triple (O0 (catenateB bl br)))
-catenate (DOR (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl)))      (DOL (Triple (O0 br)))      = DOL (Triple (O0 (catenateB bl br)))
-catenate (DOR (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B8{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B9{}))) = DOL (Triple (OGG bl D0 br))
-catenate (DOR (Triple (O0 bl)))      (DOR (Triple (O0 br)))      = DOL (Triple (O0 (catenateB bl br)))
--- Case 2:
+-- Case 2 & 4
 catenate (DOL (Triple (O0 bl))) (D2 lt rt) = D2 (onlyL bl lt) rt
 catenate (DOL (Triple (O0 bl))) (DOL ot) = DOL (cat0O bl ot)
 catenate (DOL (Triple (O0 bl))) (DOR ot) = DOL (cat0O bl ot)
 catenate (DOR (Triple (O0 bl))) (D2 lt rt) = D2 (onlyL bl lt) rt
 catenate (DOR (Triple (O0 bl))) (DOL ot) = DOL (cat0O bl ot)
 catenate (DOR (Triple (O0 bl))) (DOR ot) = DOL (cat0O bl ot)
--- Case 3
+-- Case 3 & 4
 catenate (D2 lt rt) (DOL (Triple (O0 br))) = D2 lt (onlyR rt br)
 catenate (DOL ot)   (DOL (Triple (O0 br))) = DOL (catO0 ot br)
 catenate (DOR ot)   (DOL (Triple (O0 br))) = DOL (catO0 ot br)
@@ -498,35 +477,14 @@ catenate' :: Deque (Closed cl1) (Closed cr1) q j k -> Deque (Closed cl2) (Closed
 -- Trivial
 catenate' D0 a f = f a
 catenate' a D0 f = f a
--- Case 4:
-catenate' (DOL (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl)))      (DOL (Triple (O0 br)))      f = f $ DOL (Triple (O0 (catenateB bl br)))
-catenate' (DOL (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOL (Triple (O0 bl)))      (DOR (Triple (O0 br)))      f = f $ DOL (Triple (O0 (catenateB bl br)))
-catenate' (DOR (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B8{}))) (DOL (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B9{}))) (DOL (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl)))      (DOL (Triple (O0 br)))      f = f $ DOL (Triple (O0 (catenateB bl br)))
-catenate' (DOR (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B8{}))) (DOR (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B8{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl@B9{}))) (DOR (Triple (O0 br@B9{}))) f = f $ DOL (Triple (OGG bl D0 br))
-catenate' (DOR (Triple (O0 bl)))      (DOR (Triple (O0 br)))      f = f $ DOL (Triple (O0 (catenateB bl br)))
--- -- Case 2:
+-- Case 2 & 4
 catenate' (DOL (Triple (O0 bl))) (D2 lt rt) f = onlyL' bl lt (f . (flip D2 rt))
 catenate' (DOL (Triple (O0 bl))) (DOL ot) f = cat0O' bl ot (f . DOL)
 catenate' (DOL (Triple (O0 bl))) (DOR ot) f = cat0O' bl ot (f . DOL)
 catenate' (DOR (Triple (O0 bl))) (D2 lt rt) f = onlyL' bl lt (f . (flip D2 rt))
 catenate' (DOR (Triple (O0 bl))) (DOL ot) f = cat0O' bl ot (f . DOL)
 catenate' (DOR (Triple (O0 bl))) (DOR ot) f = cat0O' bl ot (f . DOL)
--- -- Case 3
+-- Case 3 & 4
 catenate' (D2 lt rt) (DOL (Triple (O0 br))) f = onlyR' rt br (f . D2 lt)
 catenate' (DOL ot) (DOL (Triple (O0 br))) f = catO0' ot br (f . DOL)
 catenate' (DOR ot) (DOL (Triple (O0 br))) f = catO0' ot br (f . DOL)
@@ -558,7 +516,11 @@ onlyL bl      (Cap (LY ll d lr) cap1)          = Triple (LG (catenateB bl ll) d2
 onlyL bl      (Triple (LG ll d lr))            = Triple (LG (catenateB bl ll) d lr)
 
 cat0O :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap OnlyTriple (Closed Green) q i j -> Cap OnlyTriple (Closed Green) q i k
-cat0O _ (Triple O0{})                    = error "Impossible"
+cat0O bl@B8{} (Triple (O0 br@B8{})) = Triple (OGG bl D0 br)
+cat0O bl@B8{} (Triple (O0 br@B9{})) = Triple (OGG bl D0 br)
+cat0O bl@B9{} (Triple (O0 br@B8{})) = Triple (OGG bl D0 br)
+cat0O bl@B9{} (Triple (O0 br@B9{})) = Triple (OGG bl D0 br)
+cat0O bl      (Triple (O0 br))      = Triple (O0 (catenateB bl br))
 cat0O bl@B8{} (Cap (OXO ll d lr) cap1)          = case d of
   D2 lt rt ->  Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
   DOR ot -> case uncap (pushOnlyG (S1 ll) (cap ot cap1)) of ViewCap ot2 cap2 -> Cap (OXO bl (DOR ot2) lr) cap2
@@ -644,7 +606,11 @@ cat0O bl (Cap (OYX ll d lr@B9{}) cap1) = Triple (OGG (catenateB bl ll) (plugL ca
 cat0O bl (Triple (OGG ll d lr)) = Triple (OGG (catenateB bl ll) d lr)
 
 cat0O' :: Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q j k -> Cap OnlyTriple (Closed c1) q i j -> (forall c2. Cap OnlyTriple (Closed c2) q i k -> g) -> g
-cat0O' _ (Triple O0{}) _                   = error "Impossible"
+cat0O' bl@B8{} (Triple (O0 br@B8{})) f = f $ Triple (OGG bl D0 br)
+cat0O' bl@B9{} (Triple (O0 br@B8{})) f = f $ Triple (OGG bl D0 br)
+cat0O' bl@B8{} (Triple (O0 br@B9{})) f = f $ Triple (OGG bl D0 br)
+cat0O' bl@B9{} (Triple (O0 br@B9{})) f = f $ Triple (OGG bl D0 br)
+cat0O' bl      (Triple (O0 br))      f = f $ Triple (O0 (catenateB bl br))
 cat0O' bl@B8{} (Cap (OXO ll d lr) cap1) f         = case d of
   D2 lt rt ->  f $ Cap (OXO bl (D2 (pushLeftG (S1 ll) lt) rt) lr) cap1
   DOR ot -> pushOnly (S1 ll) (cap ot cap1) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OXO bl (DOR ot2) lr) cap2
@@ -730,7 +696,11 @@ cat0O' bl (Cap (OYX ll d lr@B9{}) cap1)               f  = f $ Triple (OGG (cate
 cat0O' bl (Triple (OGG ll d lr))                      f  = f $ Triple (OGG (catenateB bl ll) d lr)
 
 catO0 :: Cap OnlyTriple (Closed Green) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> Cap OnlyTriple (Closed Green) q i k
-catO0 (Triple O0{}) _                   = error "Impossible"
+catO0 (Triple (O0 bl@B8{})) br@B8{} = Triple (OGG bl D0 br)
+catO0 (Triple (O0 bl@B8{})) br@B9{} = Triple (OGG bl D0 br)
+catO0 (Triple (O0 bl@B9{})) br@B8{} = Triple (OGG bl D0 br)
+catO0 (Triple (O0 bl@B9{})) br@B9{} = Triple (OGG bl D0 br)
+catO0 (Triple (O0 bl))      br      = Triple (O0 (catenateB bl br))
 catO0 (Cap (OOX rl d rr) cap1) br@B8{} = case d of
   D2 lt rt -> case uncap (injectRightG (cap rt cap1) (S1 rr)) of ViewCap rt2 cap2 -> Cap (OOX rl (D2 lt rt2) br) cap2
   DOR ot -> case uncap (injectOnlyG (cap ot cap1) (S1 rr)) of ViewCap ot2 cap2 -> Cap (OOX rl (DOR ot2) br) cap2
@@ -804,7 +774,11 @@ catO0 (Cap (OGY rl d rr) cap1) br = Triple (OGG rl (plugL cap1 d) (catenateB rr 
 catO0 (Triple (OGG rl d rr)) br = Triple (OGG rl d (catenateB rr br))
 
 catO0' :: Cap OnlyTriple (Closed c1) q j k -> Buffer k1 k2 k3 k4 k5 k6 k7 k8 k9 q i j -> (forall c2. Cap OnlyTriple (Closed c2) q i k -> g) -> g
-catO0' (Triple O0{}) _ _                  = error "Impossible"
+catO0' (Triple (O0 bl@B8{})) br@B8{} f = f $ Triple (OGG bl D0 br)
+catO0' (Triple (O0 bl@B9{})) br@B8{} f = f $ Triple (OGG bl D0 br)
+catO0' (Triple (O0 bl@B8{})) br@B9{} f = f $ Triple (OGG bl D0 br)
+catO0' (Triple (O0 bl@B9{})) br@B9{} f = f $ Triple (OGG bl D0 br)
+catO0' (Triple (O0 bl))      br      f = f $ Triple (O0 (catenateB bl br))
 catO0' (Cap (OOX rl d rr) cap1) br@B8{} f = case d of
   D2 lt rt -> injectRight (cap rt cap1) (S1 rr) $ \e -> case uncap e of ViewCap rt2 cap2 -> f $ Cap (OOX rl (D2 lt rt2) br) cap2
   DOR ot -> injectOnly (cap ot cap1) (S1 rr) $ \e -> case uncap e of ViewCap ot2 cap2 -> f $ Cap (OOX rl (DOR ot2) br) cap2

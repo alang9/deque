@@ -6,7 +6,7 @@ version:             0.1.0.0
 synopsis:            type-aligned (or not) catenable (or not) double-ended (or "stack-ended") queues
 -- description:         
 homepage:            https://github.com/alang9/deque
-license:             AllRightsReserved
+license:             BSD3
 license-file:        LICENSE
 author:              Alex Lang
 maintainer:          me@alang.ca

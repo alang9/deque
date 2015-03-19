@@ -22,7 +22,11 @@ main = defaultMain
     , bench "Seq"    $ nf (unSeq . mkSeq) [0..1000]
     ]
   , bgroup "concatChunkThenPop"
-    [ bgroup "5"
+    [ bgroup "singleton"
+      [ bench "Cat"    $ nf (unCDeq . foldr C.catenate C.empty . map (C.singleton . F)) [0..1000]
+      , bench "Seq"    $ nf (unSeq . foldr (Seq.><) Seq.empty . map (Seq.singleton . F)) [0..1000]
+      ]
+    , bgroup "5"
       [ bench "Cat"    $ nf (unCDeq . foldr C.catenate C.empty . map mkCDeq . splits 5) [0..1000]
       , bench "Seq"    $ nf (unSeq . foldr (Seq.><) Seq.empty . map mkSeq . splits 5) [0..1000]
       ]

@@ -9,7 +9,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS -Wall #-}
 
-module Data.Deque.NonCat where
+module Data.Deque.NonCat.LessTyped where
 
 import Data.Type.Bool
 import qualified Data.Sequence as Seq

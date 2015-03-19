@@ -24,3 +24,16 @@ library
   -- hs-source-dirs:      
   default-language:    Haskell2010
   ghc-options: -O2 -Wall
+
+benchmark main
+  type:           exitcode-stdio-1.0
+  main-is:        main.hs
+  ghc-options:    -O2 -threaded
+  hs-source-dirs: benchmarks
+  build-depends:
+    base,
+    containers,
+    criterion,
+    deepseq,
+    deque
+  default-language:    Haskell2010

@@ -3,6 +3,7 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -20,6 +21,14 @@ data Trend = Lo | Hi deriving (Read, Show, Eq, Ord)
 type T = True
 type F = False
 
+data Skippable o p q i j where
+  Skip :: Skippable o F q i i
+  Lou :: !(q i j) -> Skippable T T q i j
+
+data Buffer n1 n2 n3 n4 n5 q i n where
+  B :: !(Skippable T n1 q m n) -> !(Skippable n1 n2 q l m) -> !(Skippable n2 n3 q k l) -> !(Skippable n3 n4 q j k) -> !(Skippable n4 n5 q i j) -> Buffer n1 n2 n3 n4 n5 q i n
+
+{-
 data Buffer u v w x y z q i j where
   B0 :: Buffer T F F F F F q i i
   B1 :: !(q i j) -> Buffer F T F F F F q i j
@@ -27,8 +36,16 @@ data Buffer u v w x y z q i j where
   B3 :: !(q k l) -> !(q j k) -> !(q i j) -> Buffer F F F T F F q i l
   B4 :: !(q l m) -> !(q k l) -> !(q j k) -> !(q i j) -> Buffer F F F F T F q i m
   B5 :: !(q m n) -> !(q l m) -> !(q k l) -> !(q j k) -> !(q i j) -> Buffer F F F F F T q i n
+-}
 
-instance Show (Buffer u v w x y z q i j) where
+pattern B0 = B Skip Skip Skip Skip Skip
+pattern B1 a = B (Lou a) Skip Skip Skip Skip
+pattern B2 a b = B (Lou a) (Lou b) Skip Skip Skip
+pattern B3 a b c = B (Lou a) (Lou b) (Lou c) Skip Skip
+pattern B4 a b c d = B (Lou a) (Lou b) (Lou c) (Lou d) Skip
+pattern B5 a b c d e = B (Lou a) (Lou b) (Lou c) (Lou d) (Lou e)
+
+instance Show (Buffer v w x y z q i j) where
   show B0{} = "B0"
   show B1{} = "B1"
   show B2{} = "B2"
@@ -42,7 +59,7 @@ data Pair q i k where
 data HPair q r i k where
   H :: !(q j k) -> !(r i j) -> HPair q r i k
 
-pushB :: q j k -> Buffer u v w x y F q i j -> Buffer F u v w x y q i k
+pushB :: q j k -> Buffer v w x y F q i j -> Buffer T v w x y q i k
 pushB a B0 = B1 a
 pushB a (B1 b) = B2 a b
 pushB a (B2 b c) = B3 a b c
@@ -50,7 +67,7 @@ pushB a (B3 b c d) = B4 a b c d
 pushB a (B4 b c d e) = B5 a b c d e
 {-- INLINE pushB #-}
 
-popB :: Buffer F v w x y z q i j -> HPair q (Buffer v w x y z F q) i j
+popB :: Buffer T w x y z q i j -> HPair q (Buffer w x y z F q) i j
 popB (B1 a) = a `H` B0
 popB (B2 a b) = a `H` B1 b
 popB (B3 a b c) = a `H` B2 b c
@@ -58,18 +75,18 @@ popB (B4 a b c d) = a `H` B3 b c d
 popB (B5 a b c d e) = a `H` B4 b c d e
 {-- INLINE popB #-}
 
-pushB2 :: Pair q j k -> Buffer u v w x F F q i j -> Buffer F F u v w x q i k
+pushB2 :: Pair q j k -> Buffer v w x F F q i j -> Buffer T T v w x q i k
 pushB2 (P a b) cs = pushB a (pushB b cs)
 {-- INLINE pushB2 #-}
 
-popB2 :: Buffer F F w x y z q i j -> HPair (Pair q) (Buffer w x y z F F q) i j
+popB2 :: Buffer T T x y z q i j -> HPair (Pair q) (Buffer x y z F F q) i j
 popB2 as =
   case popB as of
     a `H` bs -> case popB bs of
       b `H` cs -> P a b `H` cs
 {-- INLINE popB2 #-}
 
-injectB :: Buffer u v w x y F q j k -> q i j -> Buffer F u v w x y q i k
+injectB :: Buffer v w x y F q j k -> q i j -> Buffer T v w x y q i k
 injectB B0 a = B1 a
 injectB (B1 a) b = B2 a b
 injectB (B2 a b) c = B3 a b c
@@ -77,7 +94,7 @@ injectB (B3 a b c) d = B4 a b c d
 injectB (B4 a b c d) e = B5 a b c d e
 {-- INLINE injectB #-}
 
-ejectB :: Buffer F v w x y z q i j -> HPair (Buffer v w x y z F q) q i j
+ejectB :: Buffer T w x y z q i j -> HPair (Buffer w x y z F q) q i j
 ejectB (B1 a) = B0 `H` a
 ejectB (B2 a b) = B1 a `H` b
 ejectB (B3 a b c) = B2 a b `H` c
@@ -85,52 +102,38 @@ ejectB (B4 a b c d) = B3 a b c `H` d
 ejectB (B5 a b c d e) = B4 a b c d `H` e
 {-- INLINE ejectB #-}
 
-injectB2 :: Buffer u v w x F F q j k -> Pair q i j -> Buffer F F u v w x q i k
+injectB2 :: Buffer v w x F F q j k -> Pair q i j -> Buffer T T v w x q i k
 injectB2 as (P b c) = injectB (injectB as b) c
 {-- INLINE injectB2 #-}
 
-ejectB2 :: Buffer F F w x y z q i j -> HPair (Buffer w x y z F F q) (Pair q) i j
+ejectB2 :: Buffer T T x y z q i j -> HPair (Buffer x y z F F q) (Pair q) i j
 ejectB2 cs = case ejectB cs of
   bs `H` c -> case ejectB bs of
     as `H` b -> as `H` P b c
 {-- INLINE ejectB2 #-}
 
-data OverUnder u v w x y z q i j where
-  Under :: Buffer u v F F F F q i j -> OverUnder u v w x y z q i j
-  Okay :: Buffer F F w x F F q i j -> OverUnder u v w x y z q i j
-  Over :: Buffer F F F F y z q i j -> OverUnder u v w x y z q i j
-
-overUnder :: Buffer u v w x y z q i j -> OverUnder u v w x y z q i j
-overUnder B0 = Under B0
-overUnder (B1 a) = Under (B1 a)
-overUnder (B2 a b) = Okay (B2 a b)
-overUnder (B3 a b c) = Okay (B3 a b c)
-overUnder (B4 a b c d) = Over (B4 a b c d)
-overUnder (B5 a b c d e) = Over (B5 a b c d e)
-{-- INLINE overUnder #-}
-
 data Nope i j where
 
 data Fringe r y g q i j k l where
-  RX :: !(Buffer s F F F F t q k l) -> !(Buffer u v w x y z q i j) -> Fringe T F F q i j k l
-  XR :: !(Buffer F u v w x F q k l) -> !(Buffer y F F F F z q i j) -> Fringe T F F q i j k l
-  YX :: !(Buffer F u F F v F q k l) -> !(Buffer F w x y z F q i j) -> Fringe F T F q i j k l
-  GY :: !(Buffer F F w x F F q k l) -> !(Buffer F y F F z F q i j) -> Fringe F T F q i j k l
-  GG :: !(Buffer F F w x F F q k l) -> !(Buffer F F y z F F q i j) -> Fringe F F T q i j k l
+  RX :: !(Buffer n n n n n q k l) -> !(Buffer v w x y z q i j) -> Fringe T F F q i j k l
+  XR :: !(Buffer T v w x F q k l) -> !(Buffer n n n n n q i j) -> Fringe T F F q i j k l
+  YX :: !(Buffer T n n n F q k l) -> !(Buffer T x y z F q i j) -> Fringe F T F q i j k l
+  GY :: !(Buffer T T n F F q k l) -> !(Buffer T m m m F q i j) -> Fringe F T F q i j k l
+  GG :: !(Buffer T T n F F q k l) -> !(Buffer T T m F F q i j) -> Fringe F F T q i j k l
 
 deriving instance Show (Fringe r y g q i j k l)
 
 data Yellows q r i j k l where
   N :: Yellows q q i i l l
   Y :: !(Fringe F T F q i m n l) -> !(Yellows (Pair q) r m j k n) -> Yellows q r i j k l
-  Y1 :: !(Buffer F x F F y F q i j) -> Yellows q Nope i j j j
+  Y1 :: !(Buffer T n n n F q i j) -> Yellows q Nope i j j j
 
 deriving instance Show (Yellows q r i j k l)
 
 data Level r y g q i j where
   LEmpty :: Level F F c q i i
-  TinyH :: !(Buffer F F F F y r q i j) -> Level r y F q i j
-  TinyL :: !(Buffer r y g gg F F q i j) -> Level F F T q i j
+  TinyH :: !(Buffer T T T T r q i j) -> Level r (Not r) F q i j
+  TinyL :: !(Buffer r y g F F q i j) -> Level F F T q i j
   BigG :: !(Fringe F F T q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level F F T q i n
   BigY :: !(Fringe F T F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level c1 T c2 q i n
   BigR :: !(Fringe T F F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level F F c r k l) -> Level T F F q i n
@@ -142,43 +145,16 @@ data Deque q i j where
 
 deriving instance Show (Deque q i j)
 
-toFringe :: (r ~ (u || z || a || f), ye ~ (Not r && (v || y || b || e)), g ~ (Not r && Not ye)) => Buffer u v w x y z q k l -> Buffer a b c d e f q i j -> Fringe r ye g q i j k l
-toFringe a@B0{} b@B0{} = RX a b
-toFringe a@B0{} b@B1{} = RX a b
-toFringe a@B0{} b@B2{} = RX a b
-toFringe a@B0{} b@B3{} = RX a b
-toFringe a@B0{} b@B4{} = RX a b
-toFringe a@B0{} b@B5{} = RX a b
-toFringe a@B5{} b@B0{} = RX a b
-toFringe a@B5{} b@B1{} = RX a b
-toFringe a@B5{} b@B2{} = RX a b
-toFringe a@B5{} b@B3{} = RX a b
-toFringe a@B5{} b@B4{} = RX a b
-toFringe a@B5{} b@B5{} = RX a b
-toFringe a@B1{} b@B0{} = XR a b
-toFringe a@B2{} b@B0{} = XR a b
-toFringe a@B3{} b@B0{} = XR a b
-toFringe a@B4{} b@B0{} = XR a b
-toFringe a@B1{} b@B5{} = XR a b
-toFringe a@B2{} b@B5{} = XR a b
-toFringe a@B3{} b@B5{} = XR a b
-toFringe a@B4{} b@B5{} = XR a b
-toFringe a@B1{} b@B1{} = YX a b
-toFringe a@B1{} b@B2{} = YX a b
-toFringe a@B1{} b@B3{} = YX a b
-toFringe a@B1{} b@B4{} = YX a b
-toFringe a@B4{} b@B1{} = YX a b
-toFringe a@B4{} b@B2{} = YX a b
-toFringe a@B4{} b@B3{} = YX a b
-toFringe a@B4{} b@B4{} = YX a b
-toFringe a@B2{} b@B1{} = GY a b
-toFringe a@B2{} b@B4{} = GY a b
-toFringe a@B3{} b@B1{} = GY a b
-toFringe a@B3{} b@B4{} = GY a b
-toFringe a@B2{} b@B2{} = GG a b
-toFringe a@B2{} b@B3{} = GG a b
-toFringe a@B3{} b@B2{} = GG a b
-toFringe a@B3{} b@B3{} = GG a b
+toFringe :: (r ~ (e || z || Not a || Not v), ye ~ (Not r && (d  || y || Not b || Not w)), g ~ (Not r && Not ye)) => Buffer v w x y z q k l -> Buffer a b c d e q i j -> Fringe r ye g q i j k l
+toFringe a@B0{} b = RX a b
+toFringe a@B5{} b = RX a b
+toFringe a@(B Lou{} _ _ _ Skip) b@B0{} = XR a b
+toFringe a@(B Lou{} _ _ _ Skip) b@B5{} = XR a b
+toFringe a@B1{} b@(B Lou{} _ _ _ Skip) = YX a b
+toFringe a@B4{} b@(B Lou{} _ _ _ Skip) = YX a b
+toFringe a@(B Lou{} Lou{} _ Skip Skip) b@B1{} = GY a b
+toFringe a@(B Lou{} Lou{} _ Skip Skip) b@B4{} = GY a b
+toFringe a@(B Lou{} Lou{} _ Skip Skip) b@(B Lou{} Lou{} _ Skip Skip) = GG a b
 {-- INLINE toFringe #-}
 
 combine :: ((r && r') ~ F) => Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
@@ -230,7 +206,7 @@ data LCons r y g q i n where
   LGY :: !(Fringe r y g q i j m n) -> !(Level F y' g' (Pair q) j m) -> LCons r y g q i n
   LLEmpty :: LCons r y g q i n
 
-toTiny :: Buffer a b c d e f q i j -> Level f e (Not f && Not e) q i j
+toTiny :: Buffer b c d e f q i j -> Level f (e && Not f) (Not f && Not e) q i j
 toTiny b@B0{} = TinyL b
 toTiny b@B1{} = TinyL b
 toTiny b@B2{} = TinyL b
@@ -274,19 +250,19 @@ popL (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 {-- INLINE popL #-}
 
-moveUpL :: Buffer u v w x F F q j k -> Buffer F b c d e f (Pair q) i j -> HPair (Buffer F F u v w x q) (Buffer b c d e f F (Pair q)) i k
+moveUpL :: Buffer v w x F F q j k -> Buffer T b c d e (Pair q) i j -> HPair (Buffer T T v w x q) (Buffer b c d e F (Pair q)) i k
 moveUpL b1 b2 = case popB b2 of H p b2' -> injectB2 b1 p `H` b2'
 {-- INLINE moveUpL #-}
 
-moveDownL :: Buffer F F w x y z q j k -> Buffer a b c d e F (Pair q) i j -> HPair (Buffer w x y z F F q) (Buffer F a b c d e (Pair q)) i k
+moveDownL :: Buffer T T x y z q j k -> Buffer a b c d F (Pair q) i j -> HPair (Buffer x y z F F q) (Buffer T a b c d (Pair q)) i k
 moveDownL b1 b2 = case ejectB2 b1 of H b1' p -> b1' `H` pushB p b2
 {-- INLINE moveDownL #-}
 
-moveDownR :: Buffer u v w x y F (Pair q) j k -> Buffer F F c d e f q i j -> HPair (Buffer F u v w x y (Pair q)) (Buffer c d e f F F q) i k
+moveDownR :: Buffer v w x y F (Pair q) j k -> Buffer T T c d e q i j -> HPair (Buffer T v w x y (Pair q)) (Buffer c d e F F q) i k
 moveDownR b1 b2 = case popB2 b2 of H p b2' -> injectB b1 p `H` b2'
 {-- INLINE moveDownR #-}
 
-moveUpR :: Buffer F v w x y z (Pair q) j k -> Buffer a b c d F F q i j -> HPair (Buffer v w x y z F (Pair q)) (Buffer F F a b c d q) i k
+moveUpR :: Buffer T w x y z (Pair q) j k -> Buffer a b c F F q i j -> HPair (Buffer w x y z F (Pair q)) (Buffer T T a b c q) i k
 moveUpR b1 b2 = case ejectB b1 of H b1' p -> b1' `H` pushB2 p b2
 {-- INLINE moveUpR #-}
 
@@ -297,82 +273,82 @@ fixup y z = implant y (fixup' z)
 fixup' :: Level T F F q i j -> Level F F T q i j
 fixup' (popL -> LGY f1 (popL -> LGY f2 ls)) = case (f1, f2) of
   (RX b1 b2, YX b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GY b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GG b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-  (XR b1 b2, YX b3 b4) -> case overUnder b1 of
-    Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-    Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-  (XR b1 b2, GY b3 b4) -> case overUnder b1 of
-    Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-    Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-  (XR b1 b2, GG b3 b4) -> case overUnder b1 of
-    Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-    Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case b2 of
+      B _ Skip Skip Skip Skip -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+  (XR b1 b2, YX b3 b4) -> case b1 of
+    B _ Skip Skip Skip Skip -> case b2 of
+      B0{} -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B _ Lou{} _ Skip Skip   -> case b2 of
+      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+    B _ Lou{} _ Lou{} _     -> case b2 of
+      B0{} -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+  (XR b1 b2, GY b3 b4) -> case b1 of
+    B _ Skip Skip Skip Skip -> case b2 of
+      B0{} -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B _ Lou{} _ Skip Skip   -> case b2 of
+      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+    B _ Lou{} _ Lou{} _     -> case b2 of
+      B0{} -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+  (XR b1 b2, GG b3 b4) -> case b1 of
+    B _ Skip Skip Skip Skip -> case b2 of
+      B0{} -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B _ Lou{} _ Skip Skip   -> case b2 of
+      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+    B _ Lou{} _ Lou{} _     -> case b2 of
+      B0{} -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
 fixup' (popL -> LGY f1 (popL -> LR f2 ls)) = case (f1, f2) of
   (RX b1 b2, GG b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-  (XR b1 b2, GG b3 b4) -> case overUnder b1 of
-    Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-    Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case b2 of
+      B _ Skip Skip Skip Skip ->let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   ->let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     ->let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case b2 of
+      B _ Skip Skip Skip Skip ->let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B _ Lou{} _ Skip Skip   ->let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2) $ combine (toFringe c2 b4) ls
+      B _ Lou{} _ Lou{} _     ->let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+  (XR b1 b2, GG b3 b4) -> case b1 of
+    B _ Skip Skip Skip Skip -> case b2 of
+      B0{} -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B _ Lou{} _ Skip Skip   -> case b2 of
+      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1 c4) $ combine (toFringe b3 c3) ls
+    B _ Lou{} _ Lou{} _     -> case b2 of
+      B0{} -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
 fixup' a = fixup2' a
 {-- INLINE fixup' #-}
 

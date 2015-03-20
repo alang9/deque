@@ -13,14 +13,14 @@ import qualified Data.Sequence as Seq
 
 import Data.Deque.Cat as C
 import Data.Deque.NonCat as NC
-import Data.Deque.NonCat.LessTyped as NCLT
+-- import Data.Deque.NonCat.LessTyped as NCLT
 
 main :: IO ()
 main = defaultMain
   [ bgroup "pushThenPop"
     [ bench "Cat"    $ nf (unCDeq . mkCDeq) [0..1000]
     , bench "NonCat" $ nf (unNCDeq . mkNCDeq) [0..1000]
-    , bench "NonCat LessTyped" $ nf (unNCLTDeq . mkNCLTDeq) [0..1000]
+    -- , bench "NonCat LessTyped" $ nf (unNCLTDeq . mkNCLTDeq) [0..1000]
     , bench "Seq"    $ nf (unSeq . mkSeq) [0..1000]
     ]
   , bgroup "concatChunkThenPop"
@@ -76,16 +76,16 @@ unNCDeq = unfoldr go
       F a NC.:| d' -> Just (a, d')
       NC.Empty -> Nothing
 
-mkNCLTDeq :: [Int] -> NCLT.Deque Foo () ()
-mkNCLTDeq xs = foldr (\a d -> (F a) NCLT.<| d) NCLT.empty xs
+-- mkNCLTDeq :: [Int] -> NCLT.Deque Foo () ()
+-- mkNCLTDeq xs = foldr (\a d -> (F a) NCLT.<| d) NCLT.empty xs
 
-unNCLTDeq :: NCLT.Deque Foo () () -> [Int]
-unNCLTDeq = unfoldr go
-  where
-    go :: NCLT.Deque Foo () () -> Maybe (Int, NCLT.Deque Foo () ())
-    go d = case NCLT.uncons d of
-      F a NCLT.:| d' -> Just (a, d')
-      NCLT.Empty -> Nothing
+-- unNCLTDeq :: NCLT.Deque Foo () () -> [Int]
+-- unNCLTDeq = unfoldr go
+--   where
+--     go :: NCLT.Deque Foo () () -> Maybe (Int, NCLT.Deque Foo () ())
+--     go d = case NCLT.uncons d of
+--       F a NCLT.:| d' -> Just (a, d')
+--       NCLT.Empty -> Nothing
 
 mkSeq :: [Int] -> Seq.Seq (Foo () ())
 mkSeq xs = foldr (\a d -> (F a) Seq.<| d) Seq.empty xs

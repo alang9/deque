@@ -297,72 +297,72 @@ fixup y z = implant y (fixup' z)
 fixup' :: Level T F F q i j -> Level F F T q i j
 fixup' (popL -> LGY f1 (popL -> LGY f2 ls)) = case (f1, f2) of
   (RX b1 b2, YX b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case moveUpL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case moveDownL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GY b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case moveUpL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case moveDownL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (RX b1 b2, GG b3 b4) -> case b1 of
-    B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-    B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B0{} -> case moveUpL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+    B5{} -> case moveDownL b1 b3 of H c1 c2 -> case overUnder b2 of
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (XR b1 b2, YX b3 b4) -> case overUnder b1 of
     Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveUpL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveUpL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B0{} -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B5{} -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
     Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveDownL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveDownL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (XR b1 b2, GY b3 b4) -> case overUnder b1 of
     Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveUpL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveUpL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B0{} -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B5{} -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
     Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveDownL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveDownL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (XR b1 b2, GG b3 b4) -> case overUnder b1 of
     Under b1' -> case b2 of
-      B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveUpL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveUpL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveUpL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     Okay b1' -> case b2 of
-      B0{} -> let r = moveUpR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      B5{} -> let r = moveDownR b4 b2 in case r of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B0{} -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      B5{} -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
     Over b1' -> case b2 of
-      B0{} -> let l = moveDownL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      B5{} -> let l = moveDownL b1' b3 in let r = moveDownR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B0{} -> case moveDownL b1' b3 of H c1 c2 -> case moveUpR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      B5{} -> case moveDownL b1' b3 of H c1 c2 -> case moveDownR b4 b2 of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
 fixup' (popL -> LGY f1 (popL -> LR f2 ls)) = case (f1, f2) of
   (RX b1 b2, GG b3 b4) -> case b1 of
     B0{} -> case overUnder b2 of
-      Under b2' -> let l = moveUpL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveUpL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveUpL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Under b2' -> case moveUpL b1 b3 of H c1 c2 -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> case moveUpL b1 b3 of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveUpL b1 b3 of H c1 c2 -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
     B5{} -> case overUnder b2 of
-      Under b2' -> let l = moveDownL b1 b3 in let r = moveUpR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> let l = moveDownL b1 b3 in case l of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> let l = moveDownL b1 b3 in let r = moveDownR b4 b2' in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Under b2' -> case moveDownL b1 b3 of H c1 c2 -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> case moveDownL b1 b3 of H c1 c2 -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownL b1 b3 of H c1 c2 -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
   (XR b1 b2, GG b3 b4) -> case overUnder b1 of
     Under b1' -> case b2 of
       B0{} -> let l = moveUpL b1' b3 in let r = moveUpR b4 b2 in case (l, r) of (H c1 c2, H c3 c4) -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls

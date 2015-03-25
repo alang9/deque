@@ -128,12 +128,12 @@ data Yellows q r i j k l where
 deriving instance Show (Yellows q r i j k l)
 
 data Level r y g q i j where
+  BigG :: !(Fringe F F T q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level F F T q i n
+  BigR :: !(Fringe T F F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level F F c r k l) -> Level T F F q i n
+  BigY :: !(Fringe F T F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level c1 T c2 q i n
   LEmpty :: Level F F c q i i
   TinyH :: !(Buffer F F F F y r q i j) -> Level r y F q i j
   TinyL :: !(Buffer r y g gg F F q i j) -> Level F F T q i j
-  BigG :: !(Fringe F F T q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level F F T q i n
-  BigY :: !(Fringe F T F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level c1 F c2 r k l) -> Level c1 T c2 q i n
-  BigR :: !(Fringe T F F q i j m n) -> !(Yellows (Pair q) r j k l m) -> !(Level F F c r k l) -> Level T F F q i n
 
 deriving instance Show (Level r y g q i j)
 
@@ -226,8 +226,8 @@ combineGG f (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-- INLINE combineGG #-}
 
 data LCons r y g q i n where
-  LR :: !(Fringe r y g q i j m n) -> !(Level T y' g' (Pair q) j m) -> LCons r y g q i n
   LGY :: !(Fringe r y g q i j m n) -> !(Level F y' g' (Pair q) j m) -> LCons r y g q i n
+  LR :: !(Fringe r y g q i j m n) -> !(Level T y' g' (Pair q) j m) -> LCons r y g q i n
   LLEmpty :: LCons r y g q i n
 
 toTiny :: Buffer a b c d e f q i j -> Level f e (Not f && Not e) q i j

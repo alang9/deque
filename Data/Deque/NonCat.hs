@@ -294,10 +294,11 @@ fixup :: Yellows q r i j k l -> Level T F F r j k -> Deque q i l
 fixup y z = implant y (fixup' z)
 {-- INLINE fixup #-}
 
-fixup'' :: Buffer l0 l1 l2 l3 l4 l5 q m n -> Buffer F m1 m2 m3 m4 F (Pair q) l m
-        -> Level F y' g' (Pair (Pair q)) k l
-        -> Buffer F n1 n2 n3 n4 F (Pair q) j k -> Buffer o0 o1 o2 o3 o4 o5 q i j
-        -> Level F F T q i n
+fixup'' :: (((b1 || v1) && r') ~ 'False, ((b1 || y1) && r') ~ 'False, ((e1 || v1) && r') ~ 'False, ((e1 || y1) && r') ~ 'False, (e1 && r') ~ 'False, (b1 && r') ~ 'False, (y1 && r') ~ 'False, (v1 && r') ~ 'False) =>
+       Buffer u v w x y2 z1 q j1 k1 -> Buffer F b1 c d e1 F (Pair q) i1 j1
+    -> Level r' y' g' (Pair (Pair q)) k i1
+    -> Buffer F v1 w1 x1 y1 F (Pair q) j k -> Buffer a b y z e f q i j
+    -> Level F F T q i k1
 fixup'' b1 b3 ls b4 b2 = case overUnder b1 of
   Under b1' -> case moveUpL b1' b3 of
     H c1 c2 -> case overUnder b2 of
@@ -315,27 +316,6 @@ fixup'' b1 b3 ls b4 b2 = case overUnder b1 of
       Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
 {-- INLINE fixup'' #-}
 
-fixupG'' :: Buffer l0 l1 l2 l3 l4 l5 q m n -> Buffer F F m2 m3 F F (Pair q) l m
-        -> Level T y' g' (Pair (Pair q)) k l
-        -> Buffer F F n2 n3 F F (Pair q) j k -> Buffer o0 o1 o2 o3 o4 o5 q i j
-        -> Level F F T q i n
-fixupG'' b1 b3 ls b4 b2 = case overUnder b1 of
-  Under b1' -> case moveUpL b1' b3 of
-    H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-  Okay b1' -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      Okay b2'  -> combineGG (GG b1' b2') $ combine (toFringe b3 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-  Over b1' -> case moveDownL b1' b3 of
-    H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-{-- INLINE fixupG'' #-}
-
 fixup' :: Level T F F q i j -> Level F F T q i j
 fixup' l1 = case popL l1 of
   LGY f1 l2 -> case popL l2 of
@@ -350,8 +330,8 @@ fixup' l1 = case popL l1 of
         GG b3 b4 -> fixup'' b1 b3 l3 b4 b2
     LR f2 l3 -> case f2 of
       GG b3 b4 -> case f1 of
-        RX b1 b2 -> fixupG'' b1 b3 l3 b4 b2
-        XR b1 b2 -> fixupG'' b1 b3 l3 b4 b2
+        RX b1 b2 -> fixup'' b1 b3 l3 b4 b2
+        XR b1 b2 -> fixup'' b1 b3 l3 b4 b2
     _ -> fixup2' l1
   _ -> fixup2' l1
 {-- INLINE fixup' #-}

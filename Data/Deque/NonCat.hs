@@ -4,6 +4,8 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -103,14 +105,16 @@ data OverUnder u v w x y z q i j where
   Okay :: Buffer F F w x F F q i j -> OverUnder u v w x y z q i j
   Over :: Buffer F F F F y z q i j -> OverUnder u v w x y z q i j
 
-overUnder :: Buffer u v w x y z q i j -> OverUnder u v w x y z q i j
-overUnder B0 = Under B0
-overUnder (B1 a) = Under (B1 a)
-overUnder (B2 a b) = Okay (B2 a b)
-overUnder (B3 a b c) = Okay (B3 a b c)
-overUnder (B4 a b c d) = Over (B4 a b c d)
-overUnder (B5 a b c d e) = Over (B5 a b c d e)
-{-- INLINE overUnder #-}
+overUnder :: Buffer u v w x y z q i j -> (Buffer u v F F F F q i j -> g)
+          -> (Buffer F F w x F F q i j -> g) -> (Buffer F F F F y z q i j -> g) -> g
+overUnder b f g h = case b of
+  B0{} -> f b
+  B1{} -> f b
+  B2{} -> g b
+  B3{} -> g b
+  B4{} -> h b
+  B5{} -> h b
+{-#  INLINE overUnder #-}
 
 data Nope i j where
 
@@ -153,18 +157,8 @@ deriving instance Show (Deque q i j)
 
 toFringe :: (r ~ (u || z || a || f), ye ~ (Not r && (v || y || b || e)), g ~ (Not r && Not ye)) =>
             Buffer u v w x y z q k l -> Buffer a b c d e f q i j -> Fringe r ye g q i j k l
-toFringe a@B0{} b@B0{} = F TRX a b
-toFringe a@B0{} b@B1{} = F TRX a b
-toFringe a@B0{} b@B2{} = F TRX a b
-toFringe a@B0{} b@B3{} = F TRX a b
-toFringe a@B0{} b@B4{} = F TRX a b
-toFringe a@B0{} b@B5{} = F TRX a b
-toFringe a@B5{} b@B0{} = F TRX a b
-toFringe a@B5{} b@B1{} = F TRX a b
-toFringe a@B5{} b@B2{} = F TRX a b
-toFringe a@B5{} b@B3{} = F TRX a b
-toFringe a@B5{} b@B4{} = F TRX a b
-toFringe a@B5{} b@B5{} = F TRX a b
+toFringe a@B0{} b = F TRX a b
+toFringe a@B5{} b = F TRX a b
 toFringe a@B1{} b@B0{} = F TXR a b
 toFringe a@B2{} b@B0{} = F TXR a b
 toFringe a@B3{} b@B0{} = F TXR a b
@@ -248,59 +242,61 @@ toTiny b@B4{} = TinyH b
 toTiny b@B5{} = TinyH b
 {-- INLINE toTiny #-}
 
-popL :: {-((r && y) ~ F) =>-} Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
-popL LEmpty = LLEmpty
-popL (TinyH _) = LLEmpty
-popL (TinyL _) = LLEmpty
-popL (BigG f N ls@LEmpty) = LGY f ls
-popL (BigG f N ls@(TinyH B5{})) = LGY f ls
-popL (BigG f N ls@(TinyL{})) = LGY f ls
-popL (BigG f N ls@(BigR _ _ _)) = LGY f ls
-popL (BigG f N ls@(BigG _ _ _)) = LGY f ls
-popL (BigG f (Y1 b) LEmpty) = LGY f (toTiny b)
-popL (BigG f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyH B5{})) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(BigR _ _ _)) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-popL (BigY f N ls@LEmpty) = LGY f ls
-popL (BigY f N ls@(TinyL{})) = LGY f ls
-popL (BigY f N ls@(BigG _ _ _)) = LGY f ls
-popL (BigY f (Y1 b) LEmpty) = LGY f (toTiny b)
-popL (BigY f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-popL (BigR f N ls@LEmpty) = LGY f ls
-popL (BigR f N ls@(TinyL{})) = LGY f ls
-popL (BigR f N ls@(BigG _ _ _)) = LGY f ls
-popL (BigR f (Y1 b) LEmpty) = LGY f (toTiny b)
-popL (BigR f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-{-- INLINE popL #-}
+popL :: {-((r && y) ~ F) =>-} Level r y g q i n -> (forall j m r' y' g'. ((r && Not y) && r') ~ F => Fringe (r && Not y) y (g && Not y) q i j m n -> Level r' y' g' (Pair q) j m -> res) -> res -> res
+popL l g fallback = case l of
+  LEmpty -> fallback
+  TinyH _ -> fallback
+  TinyL _ -> fallback
+  BigG f N ls@LEmpty -> g f ls
+  BigG f N ls@(TinyH B5{}) -> g f ls
+  BigG f N ls@(TinyL{}) -> g f ls
+  BigG f N ls@(BigR _ _ _) -> g f ls
+  BigG f N ls@(BigG _ _ _) -> g f ls
+  BigG f (Y1 b) LEmpty -> g f (toTiny b)
+  BigG f (Y y ys) ls@LEmpty -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(TinyH B5{}) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(TinyL{}) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(BigR _ _ _) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(BigG _ _ _) -> g f (BigY y ys ls)
+  BigY f N ls@LEmpty -> g f ls
+  BigY f N ls@(TinyL{}) -> g f ls
+  BigY f N ls@(BigG _ _ _) -> g f ls
+  BigY f (Y1 b) LEmpty -> g f (toTiny b)
+  BigY f (Y y ys) ls@LEmpty -> g f (BigY y ys ls)
+  BigY f (Y y ys) ls@(TinyL{}) -> g f (BigY y ys ls)
+  BigY f (Y y ys) ls@(BigG _ _ _) -> g f (BigY y ys ls)
+  BigR f N ls@LEmpty -> g f ls
+  BigR f N ls@(TinyL{}) -> g f ls
+  BigR f N ls@(BigG _ _ _) -> g f ls
+  BigR f (Y1 b) LEmpty -> g f (toTiny b)
+  BigR f (Y y ys) ls@LEmpty -> g f (BigY y ys ls)
+  BigR f (Y y ys) ls@(TinyL{}) -> g f (BigY y ys ls)
+  BigR f (Y y ys) ls@(BigG _ _ _) -> g f (BigY y ys ls)
+{-#  INLINE popL #-}
 
-popL' :: {-((r && y) ~ F) => -}Level F y g q i j -> LCons F y (g && Not y) q i j
-popL' LEmpty = LLEmpty
-popL' (TinyH _) = LLEmpty
-popL' (TinyL _) = LLEmpty
-popL' (BigG f N ls@LEmpty) = LGY f ls
-popL' (BigG f N ls@(TinyH B5{})) = LGY f ls
-popL' (BigG f N ls@(TinyL{})) = LGY f ls
-popL' (BigG f N ls@(BigR _ _ _)) = LGY f ls
-popL' (BigG f N ls@(BigG _ _ _)) = LGY f ls
-popL' (BigG f (Y1 b) LEmpty) = LGY f (toTiny b)
-popL' (BigG f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL' (BigG f (Y y ys) ls@(TinyH B5{})) = LGY f (BigY y ys ls)
-popL' (BigG f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL' (BigG f (Y y ys) ls@(BigR _ _ _)) = LGY f (BigY y ys ls)
-popL' (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-popL' (BigY f N ls@LEmpty) = LGY f ls
-popL' (BigY f N ls@(TinyL{})) = LGY f ls
-popL' (BigY f N ls@(BigG _ _ _)) = LGY f ls
-popL' (BigY f (Y1 b) LEmpty) = LGY f (toTiny b)
-popL' (BigY f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL' (BigY f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL' (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
+popL' :: {-((r && y) ~ F) => -}Level F y g q i n -> (forall j m r' y' g'. Fringe F y (g && Not y) q i j m n -> Level r' y' g' (Pair q) j m -> res) -> res -> res
+popL' l g fallback = case l of
+  LEmpty -> fallback
+  TinyH _ -> fallback
+  TinyL _ -> fallback
+  BigG f N ls@LEmpty -> g f ls
+  BigG f N ls@(TinyH B5{}) -> g f ls
+  BigG f N ls@(TinyL{}) -> g f ls
+  BigG f N ls@(BigR _ _ _) -> g f ls
+  BigG f N ls@(BigG _ _ _) -> g f ls
+  BigG f (Y1 b) LEmpty -> g f (toTiny b)
+  BigG f (Y y ys) ls@LEmpty -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(TinyH B5{}) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(TinyL{}) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(BigR _ _ _) -> g f (BigY y ys ls)
+  BigG f (Y y ys) ls@(BigG _ _ _) -> g f (BigY y ys ls)
+  BigY f N ls@LEmpty -> g f ls
+  BigY f N ls@(TinyL{}) -> g f ls
+  BigY f N ls@(BigG _ _ _) -> g f ls
+  BigY f (Y1 b) LEmpty -> g f (toTiny b)
+  BigY f (Y y ys) ls@LEmpty -> g f (BigY y ys ls)
+  BigY f (Y y ys) ls@(TinyL{}) -> g f (BigY y ys ls)
+  BigY f (Y y ys) ls@(BigG _ _ _) -> g f (BigY y ys ls)
 -- popL' (BigR f N ls@LEmpty) = LGY f ls
 -- popL' (BigR f N ls@(TinyL{})) = LGY f ls
 -- popL' (BigR f N ls@(BigG _ _ _)) = LGY f ls
@@ -308,7 +304,7 @@ popL' (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 -- popL' (BigR f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
 -- popL' (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 -- popL' (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
-{-- INLINE popL' #-}
+{-#  INLINE popL' #-}
 
 moveUpL :: Buffer u v w x F F q j k -> Buffer F b c d e f (Pair q) i j -> HPair (Buffer F F u v w x q) (Buffer b c d e f F (Pair q)) i k
 moveUpL b1 b2 = case popB b2 of H p b2' -> injectB2 b1 p `H` b2'
@@ -335,31 +331,31 @@ fixup'' :: {-(((b1 || v1) && r') ~ F, ((b1 || y1) && r') ~ F, ((e1 || v1) && r')
     -> Level r' y' g' (Pair (Pair q)) k i1
     -> Buffer F v1 w1 x1 y1 F (Pair q) j k -> Buffer a b y z e f q i j
     -> Level F F T q i k1
-fixup'' b1 b3 ls b4 b2 = case overUnder b1 of
-  Under b1' -> case moveUpL b1' b3 of
-    H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
-  Okay b1' -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls
-      Okay b2'  -> combineGG (F TGG b1' b2') $ combine (toFringe b3 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls
-  Over b1' -> case moveDownL b1' b3 of
-    H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
+fixup'' b1 b3 ls b4 b2 = overUnder b1
+  (\b1' -> case moveUpL b1' b3 of
+    H c1 c2 -> overUnder b2
+      (\b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls)
+      (\b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls)
+      (\b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls))
+  (\b1' -> overUnder b2
+      (\b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls)
+      (\b2'  -> combineGG (F TGG b1' b2') $ combine (toFringe b3 b4) ls)
+      (\b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls))
+  (\b1' -> case moveDownL b1' b3 of
+    H c1 c2 -> overUnder b2
+      (\b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls)
+      (\b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls)
+      (\b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls))
 {-- INLINE fixup'' #-}
 
 fixup' :: Level T F F q i j -> Level F F T q i j
-fixup' l1 = case popL l1 of
-  LGY f1 l2 -> case popL' l2 of
-    LGY f2 l3 -> case f1 of
+fixup' l1 = popL l1
+  (\f1 l2 -> popL' l2
+    (\f2 l3 -> case f1 of
       F _ b1 b2 -> case f2 of
-        F _ b3 b4 -> fixup'' b1 b3 l3 b4 b2
-    _ -> fixup2' l1
-  _ -> fixup2' l1
+        F _ b3 b4 -> fixup'' b1 b3 l3 b4 b2)
+    (fixup2' l1))
+  (fixup2' l1)
 {-- INLINE fixup' #-}
 
 fixup2' :: Level T F F q i j -> Level F F T q i j

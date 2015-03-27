@@ -294,7 +294,7 @@ fixup :: Yellows q r i j k l -> Level T F F r j k -> Deque q i l
 fixup y z = implant y (fixup' z)
 {-- INLINE fixup #-}
 
-fixup'' :: (((b1 || v1) && r') ~ 'False, ((b1 || y1) && r') ~ 'False, ((e1 || v1) && r') ~ 'False, ((e1 || y1) && r') ~ 'False, (e1 && r') ~ 'False, (b1 && r') ~ 'False, (y1 && r') ~ 'False, (v1 && r') ~ 'False) =>
+fixup'' :: (((b1 || v1) && r') ~ F, ((b1 || y1) && r') ~ F, ((e1 || v1) && r') ~ F, ((e1 || y1) && r') ~ F, (e1 && r') ~ F, (b1 && r') ~ F, (y1 && r') ~ F, (v1 && r') ~ F) =>
        Buffer u v w x y2 z1 q j1 k1 -> Buffer F b1 c d e1 F (Pair q) i1 j1
     -> Level r' y' g' (Pair (Pair q)) k i1
     -> Buffer F v1 w1 x1 y1 F (Pair q) j k -> Buffer a b y z e f q i j

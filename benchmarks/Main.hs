@@ -25,8 +25,8 @@ main = defaultMain
     ]
   , bgroup "concatChunkThenPop"
     [ bgroup "singleton"
-      [ bench "Cat"    $ nf (unCDeq . foldr C.catenate C.empty . map (C.singleton . F)) [0..1000]
-      , bench "Seq"    $ nf (unSeq . foldr (Seq.><) Seq.empty . map (Seq.singleton . F)) [0..1000]
+      [ bench "Cat"    $ nf (unCDeq . foldr C.catenate C.empty . map (C.singleton . Foo)) [0..1000]
+      , bench "Seq"    $ nf (unSeq . foldr (Seq.><) Seq.empty . map (Seq.singleton . Foo)) [0..1000]
       ]
     , bgroup "5"
       [ bench "Cat"    $ nf (unCDeq . foldr C.catenate C.empty . map mkCDeq . splits 5) [0..1000]
@@ -44,7 +44,7 @@ main = defaultMain
   ]
 
 data Foo a b where
-  F :: !Int -> Foo () ()
+  Foo :: !Int -> Foo () ()
 
 instance NFData (Foo a b) where
   rnf !_ = ()
@@ -55,25 +55,25 @@ splits n xs = case splitAt n xs of
   (xs', xs'') -> xs' : splits n xs''
 
 mkCDeq :: [Int] -> C.Deque (C.Closed C.Green) (C.Closed C.Green) Foo () ()
-mkCDeq xs = foldr (\a d -> C.push (F a) d) C.empty xs
+mkCDeq xs = foldr (\a d -> C.push (Foo a) d) C.empty xs
 
 unCDeq :: C.Deque (C.Closed C.Green) (C.Closed C.Green) Foo () () -> [Int]
 unCDeq = unfoldr go
   where
     go :: C.Deque (C.Closed C.Green) (C.Closed C.Green) Foo () () -> Maybe (Int, C.Deque (C.Closed C.Green) (C.Closed C.Green) Foo () ())
     go d = case C.pop d of
-      F a C.:| d' -> Just (a, d')
+      Foo a C.:| d' -> Just (a, d')
       C.Empty -> Nothing
 
 mkNCDeq :: [Int] -> NC.Deque Foo () ()
-mkNCDeq xs = foldr (\a d -> (F a) NC.<| d) NC.empty xs
+mkNCDeq xs = foldr (\a d -> (Foo a) NC.<| d) NC.empty xs
 
 unNCDeq :: NC.Deque Foo () () -> [Int]
 unNCDeq = unfoldr go
   where
     go :: NC.Deque Foo () () -> Maybe (Int, NC.Deque Foo () ())
     go d = case NC.uncons d of
-      F a NC.:| d' -> Just (a, d')
+      Foo a NC.:| d' -> Just (a, d')
       NC.Empty -> Nothing
 
 -- mkNCLTDeq :: [Int] -> NCLT.Deque Foo () ()
@@ -88,12 +88,12 @@ unNCDeq = unfoldr go
 --       NCLT.Empty -> Nothing
 
 mkSeq :: [Int] -> Seq.Seq (Foo () ())
-mkSeq xs = foldr (\a d -> (F a) Seq.<| d) Seq.empty xs
+mkSeq xs = foldr (\a d -> (Foo a) Seq.<| d) Seq.empty xs
 
 unSeq :: Seq.Seq (Foo () ()) -> [Int]
 unSeq = unfoldr go
   where
     go :: Seq.Seq (Foo () ()) -> Maybe (Int, Seq.Seq (Foo () ()))
     go s = case Seq.viewl s of
-      F a Seq.:< d' -> Just (a, d')
+      Foo a Seq.:< d' -> Just (a, d')
       Seq.EmptyL -> Nothing

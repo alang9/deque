@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE EmptyDataDecls #-}
@@ -12,6 +13,8 @@
 module Data.Deque.NonCat where
 
 import Data.Type.Bool
+
+import Unsafe.Coerce
 
 data Nat = Z | S Nat deriving (Read, Show, Eq, Ord)
 data Color = Red | Yellow | Green deriving (Read, Show, Eq, Ord)
@@ -112,7 +115,7 @@ overUnder (B5 a b c d e) = Over (B5 a b c d e)
 data Nope i j where
 
 data Fringe r y g q i j k l where
-  F :: {-(l0 ~ If fr l0' F, l5 ~ If fr l5' F, r0 ~ If fr r0' F, r5 ~ If fr r5' F) =>-}
+  F :: (l0 ~ If fr l0' F, l5 ~ If fr l5' F, r0 ~ If fr r0' F, r5 ~ If fr r5' F) =>
        !(Tag l0 l1 l2 l3 l4 l5 r0 r1 r2 r3 r4 r5 fr fy fg) -> !(Buffer l0 l1 l2 l3 l4 l5 q k l) -> !(Buffer r0 r1 r2 r3 r4 r5 q i j) -> Fringe fr fy fg q i j k l
 
 data Tag l0 l1 l2 l3 l4 l5 r0 r1 r2 r3 r4 r5 fr fy fg where
@@ -188,14 +191,14 @@ toFringe a@B3{} b@B2{} = F TGG a b
 toFringe a@B3{} b@B3{} = F TGG a b
 {-- INLINE toFringe #-}
 
-combine :: ((r && r') ~ F) => Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
+combine :: {-((r && r') ~ F) =>-} Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
 combine f@(F TRX _ _) LEmpty = BigR f N LEmpty
 combine f@(F TXR _ _) LEmpty = BigR f N LEmpty
 combine f@(F TYX _ _) LEmpty = BigY f N LEmpty
 combine f@(F TGY _ _) LEmpty = BigY f N LEmpty
 combine f@(F TGG _ _) LEmpty = BigG f N LEmpty
-combine f@(F TRX _ _) (BigY y ys ls) = BigR f (Y y ys) ls
-combine f@(F TXR _ _) (BigY y ys ls) = BigR f (Y y ys) ls
+combine f@(F TRX _ _) (BigY y ys ls) = BigR f (Y y ys) (unsafeCoerce ls)
+combine f@(F TXR _ _) (BigY y ys ls) = BigR f (Y y ys) (unsafeCoerce ls)
 combine f@(F TYX _ _) (BigY y ys ls) = BigY f (Y y ys) ls
 combine f@(F TGY _ _) (BigY y ys ls) = BigY f (Y y ys) ls
 combine f@(F TGG _ _) (BigY y ys ls) = BigG f (Y y ys) ls
@@ -327,7 +330,7 @@ fixup :: Yellows q r i j k l -> Level T F F r j k -> Deque q i l
 fixup y z = implant y (fixup' z)
 {-- INLINE fixup #-}
 
-fixup'' :: (((b1 || v1) && r') ~ F, ((b1 || y1) && r') ~ F, ((e1 || v1) && r') ~ F, ((e1 || y1) && r') ~ F, (e1 && r') ~ F, (b1 && r') ~ F, (y1 && r') ~ F, (v1 && r') ~ F) =>
+fixup'' :: {-(((b1 || v1) && r') ~ F, ((b1 || y1) && r') ~ F, ((e1 || v1) && r') ~ F, ((e1 || y1) && r') ~ F, (e1 && r') ~ F, (b1 && r') ~ F, (y1 && r') ~ F, (v1 && r') ~ F) =>-}
        Buffer u v w x y2 z1 q j1 k1 -> Buffer F b1 c d e1 F (Pair q) i1 j1
     -> Level r' y' g' (Pair (Pair q)) k i1
     -> Buffer F v1 w1 x1 y1 F (Pair q) j k -> Buffer a b y z e f q i j
@@ -354,9 +357,7 @@ fixup' l1 = case popL l1 of
   LGY f1 l2 -> case popL' l2 of
     LGY f2 l3 -> case f1 of
       F _ b1 b2 -> case f2 of
-        F TYX b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        F TGY b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        F TGG b3 b4 -> fixup'' b1 b3 l3 b4 b2
+        F _ b3 b4 -> fixup'' b1 b3 l3 b4 b2
     _ -> fixup2' l1
   _ -> fixup2' l1
 {-- INLINE fixup' #-}

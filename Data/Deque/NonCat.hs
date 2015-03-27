@@ -226,8 +226,7 @@ combineGG f (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-- INLINE combineGG #-}
 
 data LCons r y g q i n where
-  LGY :: !(Fringe r y g q i j m n) -> !(Level F y' g' (Pair q) j m) -> LCons r y g q i n
-  LR :: !(Fringe r y g q i j m n) -> !(Level T y' g' (Pair q) j m) -> LCons r y g q i n
+  LGY :: ((y && r') ~ F{-, (r && r') ~ F-}) => !(Fringe r y g q i j m n) -> !(Level r' y' g' (Pair q) j m) -> LCons r y g q i n
   LLEmpty :: LCons r y g q i n
 
 toTiny :: Buffer a b c d e f q i j -> Level f e (Not f && Not e) q i j
@@ -239,31 +238,27 @@ toTiny b@B4{} = TinyH b
 toTiny b@B5{} = TinyH b
 {-- INLINE toTiny #-}
 
-popL :: Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
+popL :: {-((r && y) ~ F) => -}Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
 popL LEmpty = LLEmpty
 popL (TinyH _) = LLEmpty
 popL (TinyL _) = LLEmpty
 popL (BigG f N ls@LEmpty) = LGY f ls
-popL (BigG f N ls@(TinyH B5{})) = LR f ls
+popL (BigG f N ls@(TinyH B5{})) = LGY f ls
 popL (BigG f N ls@(TinyL{})) = LGY f ls
-popL (BigG f N ls@(BigR _ _ _)) = LR f ls
+popL (BigG f N ls@(BigR _ _ _)) = LGY f ls
 popL (BigG f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigG f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigG f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(TinyH B5{})) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL (BigG f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
+popL (BigG f (Y y ys) ls@(BigR _ _ _)) = LGY f (BigY y ys ls)
 popL (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigY f N ls@LEmpty) = LGY f ls
-popL (BigY f N ls@(TinyH B5{})) = LR f ls
 popL (BigY f N ls@(TinyL{})) = LGY f ls
-popL (BigY f N ls@(BigR _ _ _)) = LR f ls
 popL (BigY f N ls@(BigG _ _ _)) = LGY f ls
 popL (BigY f (Y1 b) LEmpty) = LGY f (toTiny b)
 popL (BigY f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(TinyH B5{})) = LR f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
-popL (BigY f (Y y ys) ls@(BigR _ _ _)) = LR f (BigY y ys ls)
 popL (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 popL (BigR f N ls@LEmpty) = LGY f ls
 popL (BigR f N ls@(TinyL{})) = LGY f ls
@@ -328,10 +323,6 @@ fixup' l1 = case popL l1 of
         YX b3 b4 -> fixup'' b1 b3 l3 b4 b2
         GY b3 b4 -> fixup'' b1 b3 l3 b4 b2
         GG b3 b4 -> fixup'' b1 b3 l3 b4 b2
-    LR f2 l3 -> case f2 of
-      GG b3 b4 -> case f1 of
-        RX b1 b2 -> fixup'' b1 b3 l3 b4 b2
-        XR b1 b2 -> fixup'' b1 b3 l3 b4 b2
     _ -> fixup2' l1
   _ -> fixup2' l1
 {-- INLINE fixup' #-}

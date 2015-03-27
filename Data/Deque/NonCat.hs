@@ -112,11 +112,17 @@ overUnder (B5 a b c d e) = Over (B5 a b c d e)
 data Nope i j where
 
 data Fringe r y g q i j k l where
-  RX :: !(Buffer s F F F F t q k l) -> !(Buffer u v w x y z q i j) -> Fringe T F F q i j k l
-  XR :: !(Buffer F u v w x F q k l) -> !(Buffer y F F F F z q i j) -> Fringe T F F q i j k l
-  YX :: !(Buffer F u F F v F q k l) -> !(Buffer F w x y z F q i j) -> Fringe F T F q i j k l
-  GY :: !(Buffer F F w x F F q k l) -> !(Buffer F y F F z F q i j) -> Fringe F T F q i j k l
-  GG :: !(Buffer F F w x F F q k l) -> !(Buffer F F y z F F q i j) -> Fringe F F T q i j k l
+  F :: {-(l0 ~ If fr l0' F, l5 ~ If fr l5' F, r0 ~ If fr r0' F, r5 ~ If fr r5' F) =>-}
+       !(Tag l0 l1 l2 l3 l4 l5 r0 r1 r2 r3 r4 r5 fr fy fg) -> !(Buffer l0 l1 l2 l3 l4 l5 q k l) -> !(Buffer r0 r1 r2 r3 r4 r5 q i j) -> Fringe fr fy fg q i j k l
+
+data Tag l0 l1 l2 l3 l4 l5 r0 r1 r2 r3 r4 r5 fr fy fg where
+  TRX :: Tag s F F F F t u v w x y z T F F
+  TXR :: Tag F u v w x F y F F F F z T F F
+  TYX :: Tag F u F F v F F w x y z F F T F
+  TGY :: Tag F F w x F F F y F F z F F T F
+  TGG :: Tag F F w x F F F F y z F F F F T
+
+deriving instance Show (Tag l0 l1 l2 l3 l4 l5 r0 r1 r2 r3 r4 r5 fr fy fg)
 
 deriving instance Show (Fringe r y g q i j k l)
 
@@ -142,77 +148,78 @@ data Deque q i j where
 
 deriving instance Show (Deque q i j)
 
-toFringe :: (r ~ (u || z || a || f), ye ~ (Not r && (v || y || b || e)), g ~ (Not r && Not ye)) => Buffer u v w x y z q k l -> Buffer a b c d e f q i j -> Fringe r ye g q i j k l
-toFringe a@B0{} b@B0{} = RX a b
-toFringe a@B0{} b@B1{} = RX a b
-toFringe a@B0{} b@B2{} = RX a b
-toFringe a@B0{} b@B3{} = RX a b
-toFringe a@B0{} b@B4{} = RX a b
-toFringe a@B0{} b@B5{} = RX a b
-toFringe a@B5{} b@B0{} = RX a b
-toFringe a@B5{} b@B1{} = RX a b
-toFringe a@B5{} b@B2{} = RX a b
-toFringe a@B5{} b@B3{} = RX a b
-toFringe a@B5{} b@B4{} = RX a b
-toFringe a@B5{} b@B5{} = RX a b
-toFringe a@B1{} b@B0{} = XR a b
-toFringe a@B2{} b@B0{} = XR a b
-toFringe a@B3{} b@B0{} = XR a b
-toFringe a@B4{} b@B0{} = XR a b
-toFringe a@B1{} b@B5{} = XR a b
-toFringe a@B2{} b@B5{} = XR a b
-toFringe a@B3{} b@B5{} = XR a b
-toFringe a@B4{} b@B5{} = XR a b
-toFringe a@B1{} b@B1{} = YX a b
-toFringe a@B1{} b@B2{} = YX a b
-toFringe a@B1{} b@B3{} = YX a b
-toFringe a@B1{} b@B4{} = YX a b
-toFringe a@B4{} b@B1{} = YX a b
-toFringe a@B4{} b@B2{} = YX a b
-toFringe a@B4{} b@B3{} = YX a b
-toFringe a@B4{} b@B4{} = YX a b
-toFringe a@B2{} b@B1{} = GY a b
-toFringe a@B2{} b@B4{} = GY a b
-toFringe a@B3{} b@B1{} = GY a b
-toFringe a@B3{} b@B4{} = GY a b
-toFringe a@B2{} b@B2{} = GG a b
-toFringe a@B2{} b@B3{} = GG a b
-toFringe a@B3{} b@B2{} = GG a b
-toFringe a@B3{} b@B3{} = GG a b
+toFringe :: (r ~ (u || z || a || f), ye ~ (Not r && (v || y || b || e)), g ~ (Not r && Not ye)) =>
+            Buffer u v w x y z q k l -> Buffer a b c d e f q i j -> Fringe r ye g q i j k l
+toFringe a@B0{} b@B0{} = F TRX a b
+toFringe a@B0{} b@B1{} = F TRX a b
+toFringe a@B0{} b@B2{} = F TRX a b
+toFringe a@B0{} b@B3{} = F TRX a b
+toFringe a@B0{} b@B4{} = F TRX a b
+toFringe a@B0{} b@B5{} = F TRX a b
+toFringe a@B5{} b@B0{} = F TRX a b
+toFringe a@B5{} b@B1{} = F TRX a b
+toFringe a@B5{} b@B2{} = F TRX a b
+toFringe a@B5{} b@B3{} = F TRX a b
+toFringe a@B5{} b@B4{} = F TRX a b
+toFringe a@B5{} b@B5{} = F TRX a b
+toFringe a@B1{} b@B0{} = F TXR a b
+toFringe a@B2{} b@B0{} = F TXR a b
+toFringe a@B3{} b@B0{} = F TXR a b
+toFringe a@B4{} b@B0{} = F TXR a b
+toFringe a@B1{} b@B5{} = F TXR a b
+toFringe a@B2{} b@B5{} = F TXR a b
+toFringe a@B3{} b@B5{} = F TXR a b
+toFringe a@B4{} b@B5{} = F TXR a b
+toFringe a@B1{} b@B1{} = F TYX a b
+toFringe a@B1{} b@B2{} = F TYX a b
+toFringe a@B1{} b@B3{} = F TYX a b
+toFringe a@B1{} b@B4{} = F TYX a b
+toFringe a@B4{} b@B1{} = F TYX a b
+toFringe a@B4{} b@B2{} = F TYX a b
+toFringe a@B4{} b@B3{} = F TYX a b
+toFringe a@B4{} b@B4{} = F TYX a b
+toFringe a@B2{} b@B1{} = F TGY a b
+toFringe a@B2{} b@B4{} = F TGY a b
+toFringe a@B3{} b@B1{} = F TGY a b
+toFringe a@B3{} b@B4{} = F TGY a b
+toFringe a@B2{} b@B2{} = F TGG a b
+toFringe a@B2{} b@B3{} = F TGG a b
+toFringe a@B3{} b@B2{} = F TGG a b
+toFringe a@B3{} b@B3{} = F TGG a b
 {-- INLINE toFringe #-}
 
 combine :: ((r && r') ~ F) => Fringe r y g q i j m n -> Level r' y' g' (Pair q) j m -> Level (r || (y && r')) y (g || (y && g')) q i n
-combine f@(RX _ _) LEmpty = BigR f N LEmpty
-combine f@(XR _ _) LEmpty = BigR f N LEmpty
-combine f@(YX _ _) LEmpty = BigY f N LEmpty
-combine f@(GY _ _) LEmpty = BigY f N LEmpty
-combine f@(GG _ _) LEmpty = BigG f N LEmpty
-combine f@(RX _ _) (BigY y ys ls) = BigR f (Y y ys) ls
-combine f@(XR _ _) (BigY y ys ls) = BigR f (Y y ys) ls
-combine f@(YX _ _) (BigY y ys ls) = BigY f (Y y ys) ls
-combine f@(GY _ _) (BigY y ys ls) = BigY f (Y y ys) ls
-combine f@(GG _ _) (BigY y ys ls) = BigG f (Y y ys) ls
-combine f@(RX _ _) ls@(BigG _ _ _) = BigR f N ls
-combine f@(XR _ _) ls@(BigG _ _ _) = BigR f N ls
-combine f@(YX _ _) ls@(BigG _ _ _) = BigY f N ls
-combine f@(GY _ _) ls@(BigG _ _ _) = BigY f N ls
-combine f@(GG _ _) ls@(BigG _ _ _) = BigG f N ls
-combine f@(YX _ _) ls@(BigR _ _ _) = BigY f N ls
-combine f@(GY _ _) ls@(BigR _ _ _) = BigY f N ls
-combine f@(GG _ _) ls@(BigR _ _ _) = BigG f N ls
-combine f@(RX _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
-combine f@(RX _ _) g@TinyL{} = BigR f N g
-combine f@(XR _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
-combine f@(XR _ _) g@TinyL{} = BigR f N g
-combine f@(YX _ _) ls@(TinyH B5{}) = BigY f N ls
-combine f@(YX _ _) ls@TinyL{} = BigY f N ls
-combine f@(YX _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
-combine f@(GY _ _) ls@(TinyH B5{}) = BigY f N ls
-combine f@(GY _ _) ls@TinyL{} = BigY f N ls
-combine f@(GY _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
-combine f@(GG _ _) ls@(TinyH B5{}) = BigG f N ls
-combine f@(GG _ _) ls@TinyL{} = BigG f N ls
-combine f@(GG _ _) (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
+combine f@(F TRX _ _) LEmpty = BigR f N LEmpty
+combine f@(F TXR _ _) LEmpty = BigR f N LEmpty
+combine f@(F TYX _ _) LEmpty = BigY f N LEmpty
+combine f@(F TGY _ _) LEmpty = BigY f N LEmpty
+combine f@(F TGG _ _) LEmpty = BigG f N LEmpty
+combine f@(F TRX _ _) (BigY y ys ls) = BigR f (Y y ys) ls
+combine f@(F TXR _ _) (BigY y ys ls) = BigR f (Y y ys) ls
+combine f@(F TYX _ _) (BigY y ys ls) = BigY f (Y y ys) ls
+combine f@(F TGY _ _) (BigY y ys ls) = BigY f (Y y ys) ls
+combine f@(F TGG _ _) (BigY y ys ls) = BigG f (Y y ys) ls
+combine f@(F TRX _ _) ls@(BigG _ _ _) = BigR f N ls
+combine f@(F TXR _ _) ls@(BigG _ _ _) = BigR f N ls
+combine f@(F TYX _ _) ls@(BigG _ _ _) = BigY f N ls
+combine f@(F TGY _ _) ls@(BigG _ _ _) = BigY f N ls
+combine f@(F TGG _ _) ls@(BigG _ _ _) = BigG f N ls
+combine f@(F TYX _ _) ls@(BigR _ _ _) = BigY f N ls
+combine f@(F TGY _ _) ls@(BigR _ _ _) = BigY f N ls
+combine f@(F TGG _ _) ls@(BigR _ _ _) = BigG f N ls
+combine f@(F TRX _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
+combine f@(F TRX _ _) g@TinyL{} = BigR f N g
+combine f@(F TXR _ _) (TinyH b@B4{}) = BigR f (Y1 b) LEmpty
+combine f@(F TXR _ _) g@TinyL{} = BigR f N g
+combine f@(F TYX _ _) ls@(TinyH B5{}) = BigY f N ls
+combine f@(F TYX _ _) ls@TinyL{} = BigY f N ls
+combine f@(F TYX _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
+combine f@(F TGY _ _) ls@(TinyH B5{}) = BigY f N ls
+combine f@(F TGY _ _) ls@TinyL{} = BigY f N ls
+combine f@(F TGY _ _) (TinyH b@B4{}) = BigY f (Y1 b) LEmpty
+combine f@(F TGG _ _) ls@(TinyH B5{}) = BigG f N ls
+combine f@(F TGG _ _) ls@TinyL{} = BigG f N ls
+combine f@(F TGG _ _) (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-- INLINE combine #-}
 
 combineGG :: Fringe F F T q i j m n -> Level r' y' g' (Pair q) j m -> Level F F T q i n
@@ -226,7 +233,7 @@ combineGG f (TinyH b@B4{}) = BigG f (Y1 b) LEmpty
 {-- INLINE combineGG #-}
 
 data LCons r y g q i n where
-  LGY :: ((y && r') ~ F{-, (r && r') ~ F-}) => !(Fringe r y g q i j m n) -> !(Level r' y' g' (Pair q) j m) -> LCons r y g q i n
+  LGY :: ((y && r') ~ F, (r && r') ~ F) => !(Fringe r y g q i j m n) -> !(Level r' y' g' (Pair q) j m) -> LCons r y g q i n
   LLEmpty :: LCons r y g q i n
 
 toTiny :: Buffer a b c d e f q i j -> Level f e (Not f && Not e) q i j
@@ -238,7 +245,7 @@ toTiny b@B4{} = TinyH b
 toTiny b@B5{} = TinyH b
 {-- INLINE toTiny #-}
 
-popL :: {-((r && y) ~ F) => -}Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
+popL :: {-((r && y) ~ F) =>-} Level r y g q i j -> LCons (r && Not y) y (g && Not y) q i j
 popL LEmpty = LLEmpty
 popL (TinyH _) = LLEmpty
 popL (TinyL _) = LLEmpty
@@ -269,6 +276,37 @@ popL (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
 popL (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
 {-- INLINE popL #-}
 
+popL' :: {-((r && y) ~ F) => -}Level F y g q i j -> LCons F y (g && Not y) q i j
+popL' LEmpty = LLEmpty
+popL' (TinyH _) = LLEmpty
+popL' (TinyL _) = LLEmpty
+popL' (BigG f N ls@LEmpty) = LGY f ls
+popL' (BigG f N ls@(TinyH B5{})) = LGY f ls
+popL' (BigG f N ls@(TinyL{})) = LGY f ls
+popL' (BigG f N ls@(BigR _ _ _)) = LGY f ls
+popL' (BigG f N ls@(BigG _ _ _)) = LGY f ls
+popL' (BigG f (Y1 b) LEmpty) = LGY f (toTiny b)
+popL' (BigG f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
+popL' (BigG f (Y y ys) ls@(TinyH B5{})) = LGY f (BigY y ys ls)
+popL' (BigG f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
+popL' (BigG f (Y y ys) ls@(BigR _ _ _)) = LGY f (BigY y ys ls)
+popL' (BigG f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
+popL' (BigY f N ls@LEmpty) = LGY f ls
+popL' (BigY f N ls@(TinyL{})) = LGY f ls
+popL' (BigY f N ls@(BigG _ _ _)) = LGY f ls
+popL' (BigY f (Y1 b) LEmpty) = LGY f (toTiny b)
+popL' (BigY f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
+popL' (BigY f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
+popL' (BigY f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
+-- popL' (BigR f N ls@LEmpty) = LGY f ls
+-- popL' (BigR f N ls@(TinyL{})) = LGY f ls
+-- popL' (BigR f N ls@(BigG _ _ _)) = LGY f ls
+-- popL' (BigR f (Y1 b) LEmpty) = LGY f (toTiny b)
+-- popL' (BigR f (Y y ys) ls@LEmpty) = LGY f (BigY y ys ls)
+-- popL' (BigR f (Y y ys) ls@(TinyL{})) = LGY f (BigY y ys ls)
+-- popL' (BigR f (Y y ys) ls@(BigG _ _ _)) = LGY f (BigY y ys ls)
+{-- INLINE popL' #-}
+
 moveUpL :: Buffer u v w x F F q j k -> Buffer F b c d e f (Pair q) i j -> HPair (Buffer F F u v w x q) (Buffer b c d e f F (Pair q)) i k
 moveUpL b1 b2 = case popB b2 of H p b2' -> injectB2 b1 p `H` b2'
 {-- INLINE moveUpL #-}
@@ -297,178 +335,174 @@ fixup'' :: (((b1 || v1) && r') ~ F, ((b1 || y1) && r') ~ F, ((e1 || v1) && r') ~
 fixup'' b1 b3 ls b4 b2 = case overUnder b1 of
   Under b1' -> case moveUpL b1' b3 of
     H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
   Okay b1' -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
-      Okay b2'  -> combineGG (GG b1' b2') $ combine (toFringe b3 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG b1' c4) $ combine (toFringe b3 c3) ls
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls
+      Okay b2'  -> combineGG (F TGG b1' b2') $ combine (toFringe b3 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG b1' c4) $ combine (toFringe b3 c3) ls
   Over b1' -> case moveDownL b1' b3 of
     H c1 c2 -> case overUnder b2 of
-      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
-      Okay b2'  -> combineGG (GG c1 b2') $ combine (toFringe c2 b4) ls
-      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (GG c1 c4) $ combine (toFringe c2 c3) ls
+      Under b2' -> case moveUpR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
+      Okay b2'  -> combineGG (F TGG c1 b2') $ combine (toFringe c2 b4) ls
+      Over b2'  -> case moveDownR b4 b2' of H c3 c4 -> combineGG (F TGG c1 c4) $ combine (toFringe c2 c3) ls
 {-- INLINE fixup'' #-}
 
 fixup' :: Level T F F q i j -> Level F F T q i j
 fixup' l1 = case popL l1 of
-  LGY f1 l2 -> case popL l2 of
+  LGY f1 l2 -> case popL' l2 of
     LGY f2 l3 -> case f1 of
-      RX b1 b2 -> case f2 of
-        YX b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        GY b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        GG b3 b4 -> fixup'' b1 b3 l3 b4 b2
-      XR b1 b2 -> case f2 of
-        YX b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        GY b3 b4 -> fixup'' b1 b3 l3 b4 b2
-        GG b3 b4 -> fixup'' b1 b3 l3 b4 b2
+      F _ b1 b2 -> case f2 of
+        F TYX b3 b4 -> fixup'' b1 b3 l3 b4 b2
+        F TGY b3 b4 -> fixup'' b1 b3 l3 b4 b2
+        F TGG b3 b4 -> fixup'' b1 b3 l3 b4 b2
     _ -> fixup2' l1
   _ -> fixup2' l1
 {-- INLINE fixup' #-}
 
 fixup2' :: Level T F F q i j -> Level F F T q i j
 fixup2' (TinyH (B5 a b c d e))                                                                     = go5 a b c d e
-fixup2' (BigR (RX B0 (B0))                       N LEmpty)                                         = LEmpty
-fixup2' (BigR (RX B0 (B1 n))                     N LEmpty)                                         = go1 n
-fixup2' (BigR (RX B0 (B2 n o))                   N LEmpty)                                         = go2 n o
-fixup2' (BigR (RX B0 (B3 n o p))                 N LEmpty)                                         = go3 n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               N LEmpty)                                         = go4 n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             N LEmpty)                                         = go5 n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           N LEmpty)                                         = go5 a b c d e
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         N LEmpty)                                         = go6 a b c d e n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       N LEmpty)                                         = go7 a b c d e n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     N LEmpty)                                         = go8 a b c d e n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   N LEmpty)                                         = go9 a b c d e n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N LEmpty)                                         = go10 a b c d e n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   N LEmpty)                                         = go1 a
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         N LEmpty)                                         = go6 a n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 N LEmpty)                                         = go2 a b
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       N LEmpty)                                         = go7 a b n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               N LEmpty)                                         = go3 a b c
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     N LEmpty)                                         = go8 a b c n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             N LEmpty)                                         = go4 a b c d
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   N LEmpty)                                         = go9 a b c d n o p q r
-fixup2' (BigR (RX B0 (B0))                       (Y1 (B1 (P s t))) LEmpty)                         = go2 s t
-fixup2' (BigR (RX B0 (B1 n))                     (Y1 (B1 (P s t))) LEmpty)                         = go3 s t n
-fixup2' (BigR (RX B0 (B2 n o))                   (Y1 (B1 (P s t))) LEmpty)                         = go4 s t n o
-fixup2' (BigR (RX B0 (B3 n o p))                 (Y1 (B1 (P s t))) LEmpty)                         = go5 s t n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               (Y1 (B1 (P s t))) LEmpty)                         = go6 s t n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             (Y1 (B1 (P s t))) LEmpty)                         = go7 s t n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           (Y1 (B1 (P s t))) LEmpty)                         = go7 a b c d e s t
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         (Y1 (B1 (P s t))) LEmpty)                         = go8 a b c d e s t n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       (Y1 (B1 (P s t))) LEmpty)                         = go9 a b c d e s t n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     (Y1 (B1 (P s t))) LEmpty)                         = go10 a b c d e s t n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   (Y1 (B1 (P s t))) LEmpty)                         = go11 a b c d e s t n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) (Y1 (B1 (P s t))) LEmpty)                         = go12 a b c d e s t n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   (Y1 (B1 (P s t))) LEmpty)                         = go3 a s t
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         (Y1 (B1 (P s t))) LEmpty)                         = go8 a s t n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 (Y1 (B1 (P s t))) LEmpty)                         = go4 a b s t
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       (Y1 (B1 (P s t))) LEmpty)                         = go9 a b s t n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               (Y1 (B1 (P s t))) LEmpty)                         = go5 a b c s t
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     (Y1 (B1 (P s t))) LEmpty)                         = go10 a b c s t n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             (Y1 (B1 (P s t))) LEmpty)                         = go6 a b c d s t
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   (Y1 (B1 (P s t))) LEmpty)                         = go11 a b c d s t n o p q r
-fixup2' (BigR (RX B0 (B0))                       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go8 s t u v w x y z
-fixup2' (BigR (RX B0 (B1 n))                     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go9 s t u v w x y z n
-fixup2' (BigR (RX B0 (B2 n o))                   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go10 s t u v w x y z n o
-fixup2' (BigR (RX B0 (B3 n o p))                 (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go11 s t u v w x y z n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go12 s t u v w x y z n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go13 s t u v w x y z n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go13 a b c d e s t u v w x y z
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go14 a b c d e s t u v w x y z n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go15 a b c d e s t u v w x y z n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go16 a b c d e s t u v w x y z n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go17 a b c d e s t u v w x y z n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go18 a b c d e s t u v w x y z n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go9 a s t u v w x y z
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go14 a s t u v w x y z n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go10 a b s t u v w x y z
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go15 a b s t u v w x y z n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go11 a b c s t u v w x y z
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go16 a b c s t u v w x y z n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go12 a b c d s t u v w x y z
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go17 a b c d s t u v w x y z n o p q r
-fixup2' (BigR (RX B0 (B0))                       N (TinyL B0))                           = LEmpty
-fixup2' (BigR (RX B0 (B1 n))                     N (TinyL B0))                           = go1 n
-fixup2' (BigR (RX B0 (B2 n o))                   N (TinyL B0))                           = go2 n o
-fixup2' (BigR (RX B0 (B3 n o p))                 N (TinyL B0))                           = go3 n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               N (TinyL B0))                           = go4 n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             N (TinyL B0))                           = go5 n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           N (TinyL B0))                           = go5 a b c d e
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyL B0))                           = go6 a b c d e n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyL B0))                           = go7 a b c d e n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyL B0))                           = go8 a b c d e n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyL B0))                           = go9 a b c d e n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyL B0))                           = go10 a b c d e n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   N (TinyL B0))                           = go1 a
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyL B0))                           = go6 a n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 N (TinyL B0))                           = go2 a b
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyL B0))                           = go7 a b n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               N (TinyL B0))                           = go3 a b c
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL B0))                           = go8 a b c n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             N (TinyL B0))                           = go4 a b c d
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL B0))                           = go9 a b c d n o p q r
-fixup2' (BigR (RX B0 (B0))                       N (TinyL (B1 (P s t))))                           = go2 s t
-fixup2' (BigR (RX B0 (B1 n))                     N (TinyL (B1 (P s t))))                           = go3 s t n
-fixup2' (BigR (RX B0 (B2 n o))                   N (TinyL (B1 (P s t))))                           = go4 s t n o
-fixup2' (BigR (RX B0 (B3 n o p))                 N (TinyL (B1 (P s t))))                           = go5 s t n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               N (TinyL (B1 (P s t))))                           = go6 s t n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             N (TinyL (B1 (P s t))))                           = go7 s t n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           N (TinyL (B1 (P s t))))                           = go7 a b c d e s t
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyL (B1 (P s t))))                           = go8 a b c d e s t n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyL (B1 (P s t))))                           = go9 a b c d e s t n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyL (B1 (P s t))))                           = go10 a b c d e s t n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyL (B1 (P s t))))                           = go11 a b c d e s t n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B1 (P s t))))                           = go12 a b c d e s t n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   N (TinyL (B1 (P s t))))                           = go3 a s t
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyL (B1 (P s t))))                           = go8 a s t n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 N (TinyL (B1 (P s t))))                           = go4 a b s t
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyL (B1 (P s t))))                           = go9 a b s t n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               N (TinyL (B1 (P s t))))                           = go5 a b c s t
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL (B1 (P s t))))                           = go10 a b c s t n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             N (TinyL (B1 (P s t))))                           = go6 a b c d s t
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL (B1 (P s t))))                           = go11 a b c d s t n o p q r
-fixup2' (BigR (RX B0 (B0))                       N (TinyL (B2 (P s t) (P u v))))                   = go4 s t u v
-fixup2' (BigR (RX B0 (B1 n))                     N (TinyL (B2 (P s t) (P u v))))                   = go5 s t u v n
-fixup2' (BigR (RX B0 (B2 n o))                   N (TinyL (B2 (P s t) (P u v))))                   = go6 s t u v n o
-fixup2' (BigR (RX B0 (B3 n o p))                 N (TinyL (B2 (P s t) (P u v))))                   = go7 s t u v n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               N (TinyL (B2 (P s t) (P u v))))                   = go8 s t u v n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             N (TinyL (B2 (P s t) (P u v))))                   = go9 s t u v n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           N (TinyL (B2 (P s t) (P u v))))                   = go9 a b c d e s t u v
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyL (B2 (P s t) (P u v))))                   = go10 a b c d e s t u v n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyL (B2 (P s t) (P u v))))                   = go11 a b c d e s t u v n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyL (B2 (P s t) (P u v))))                   = go12 a b c d e s t u v n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyL (B2 (P s t) (P u v))))                   = go13 a b c d e s t u v n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B2 (P s t) (P u v))))                   = go14 a b c d e s t u v n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   N (TinyL (B2 (P s t) (P u v))))                   = go5 a s t u v
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyL (B2 (P s t) (P u v))))                   = go10 a s t u v n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 N (TinyL (B2 (P s t) (P u v))))                   = go6 a b s t u v
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyL (B2 (P s t) (P u v))))                   = go11 a b s t u v n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               N (TinyL (B2 (P s t) (P u v))))                   = go7 a b c s t u v
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL (B2 (P s t) (P u v))))                   = go12 a b c s t u v n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             N (TinyL (B2 (P s t) (P u v))))                   = go8 a b c d s t u v
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL (B2 (P s t) (P u v))))                   = go13 a b c d s t u v n o p q r
-fixup2' (BigR (RX B0 (B0))                       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go6 s t u v w x
-fixup2' (BigR (RX B0 (B1 n))                     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 s t u v w x n
-fixup2' (BigR (RX B0 (B2 n o))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 s t u v w x n o
-fixup2' (BigR (RX B0 (B3 n o p))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 s t u v w x n o p
-fixup2' (BigR (RX B0 (B4 n o p q))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 s t u v w x n o p q
-fixup2' (BigR (RX B0 (B5 n o p q r))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 s t u v w x n o p q r
-fixup2' (BigR (RX (B5 a b c d e) (B0))           N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 a b c d e s t u v w x
-fixup2' (BigR (RX (B5 a b c d e) (B1 n))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a b c d e s t u v w x n
-fixup2' (BigR (RX (B5 a b c d e) (B2 n o))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b c d e s t u v w x n o
-fixup2' (BigR (RX (B5 a b c d e) (B3 n o p))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c d e s t u v w x n o p
-fixup2' (BigR (RX (B5 a b c d e) (B4 n o p q))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d e s t u v w x n o p q
-fixup2' (BigR (RX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B3 (P s t) (P u v) (P w x))))           = go16 a b c d e s t u v w x n o p q r
-fixup2' (BigR (XR (B1 a) (B0))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 a s t u v w x
-fixup2' (BigR (XR (B1 a) (B5 n o p q r))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a s t u v w x n o p q r
-fixup2' (BigR (XR (B2 a b) (B0))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 a b s t u v w x
-fixup2' (BigR (XR (B2 a b) (B5 n o p q r))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b s t u v w x n o p q r
-fixup2' (BigR (XR (B3 a b c) (B0))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 a b c s t u v w x
-fixup2' (BigR (XR (B3 a b c) (B5 n o p q r))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c s t u v w x n o p q r
-fixup2' (BigR (XR (B4 a b c d) (B0))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 a b c d s t u v w x
-fixup2' (BigR (XR (B4 a b c d) (B5 n o p q r))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d s t u v w x n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       N LEmpty)                                         = LEmpty
+fixup2' (BigR (F TRX B0 (B1 n))                     N LEmpty)                                         = go1 n
+fixup2' (BigR (F TRX B0 (B2 n o))                   N LEmpty)                                         = go2 n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 N LEmpty)                                         = go3 n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               N LEmpty)                                         = go4 n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             N LEmpty)                                         = go5 n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           N LEmpty)                                         = go5 a b c d e
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         N LEmpty)                                         = go6 a b c d e n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       N LEmpty)                                         = go7 a b c d e n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     N LEmpty)                                         = go8 a b c d e n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   N LEmpty)                                         = go9 a b c d e n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) N LEmpty)                                         = go10 a b c d e n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   N LEmpty)                                         = go1 a
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         N LEmpty)                                         = go6 a n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 N LEmpty)                                         = go2 a b
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       N LEmpty)                                         = go7 a b n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               N LEmpty)                                         = go3 a b c
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     N LEmpty)                                         = go8 a b c n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             N LEmpty)                                         = go4 a b c d
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   N LEmpty)                                         = go9 a b c d n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       (Y1 (B1 (P s t))) LEmpty)                         = go2 s t
+fixup2' (BigR (F TRX B0 (B1 n))                     (Y1 (B1 (P s t))) LEmpty)                         = go3 s t n
+fixup2' (BigR (F TRX B0 (B2 n o))                   (Y1 (B1 (P s t))) LEmpty)                         = go4 s t n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 (Y1 (B1 (P s t))) LEmpty)                         = go5 s t n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               (Y1 (B1 (P s t))) LEmpty)                         = go6 s t n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             (Y1 (B1 (P s t))) LEmpty)                         = go7 s t n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           (Y1 (B1 (P s t))) LEmpty)                         = go7 a b c d e s t
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         (Y1 (B1 (P s t))) LEmpty)                         = go8 a b c d e s t n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       (Y1 (B1 (P s t))) LEmpty)                         = go9 a b c d e s t n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     (Y1 (B1 (P s t))) LEmpty)                         = go10 a b c d e s t n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   (Y1 (B1 (P s t))) LEmpty)                         = go11 a b c d e s t n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) (Y1 (B1 (P s t))) LEmpty)                         = go12 a b c d e s t n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   (Y1 (B1 (P s t))) LEmpty)                         = go3 a s t
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         (Y1 (B1 (P s t))) LEmpty)                         = go8 a s t n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 (Y1 (B1 (P s t))) LEmpty)                         = go4 a b s t
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       (Y1 (B1 (P s t))) LEmpty)                         = go9 a b s t n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               (Y1 (B1 (P s t))) LEmpty)                         = go5 a b c s t
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     (Y1 (B1 (P s t))) LEmpty)                         = go10 a b c s t n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             (Y1 (B1 (P s t))) LEmpty)                         = go6 a b c d s t
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   (Y1 (B1 (P s t))) LEmpty)                         = go11 a b c d s t n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go8 s t u v w x y z
+fixup2' (BigR (F TRX B0 (B1 n))                     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go9 s t u v w x y z n
+fixup2' (BigR (F TRX B0 (B2 n o))                   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go10 s t u v w x y z n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go11 s t u v w x y z n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go12 s t u v w x y z n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go13 s t u v w x y z n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go13 a b c d e s t u v w x y z
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go14 a b c d e s t u v w x y z n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go15 a b c d e s t u v w x y z n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go16 a b c d e s t u v w x y z n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go17 a b c d e s t u v w x y z n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go18 a b c d e s t u v w x y z n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go9 a s t u v w x y z
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go14 a s t u v w x y z n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go10 a b s t u v w x y z
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go15 a b s t u v w x y z n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go11 a b c s t u v w x y z
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go16 a b c s t u v w x y z n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go12 a b c d s t u v w x y z
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   (Y1 (B4 (P s t) (P u v) (P w x) (P y z))) LEmpty) = go17 a b c d s t u v w x y z n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       N (TinyL B0))                           = LEmpty
+fixup2' (BigR (F TRX B0 (B1 n))                     N (TinyL B0))                           = go1 n
+fixup2' (BigR (F TRX B0 (B2 n o))                   N (TinyL B0))                           = go2 n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 N (TinyL B0))                           = go3 n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               N (TinyL B0))                           = go4 n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             N (TinyL B0))                           = go5 n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           N (TinyL B0))                           = go5 a b c d e
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         N (TinyL B0))                           = go6 a b c d e n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       N (TinyL B0))                           = go7 a b c d e n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     N (TinyL B0))                           = go8 a b c d e n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   N (TinyL B0))                           = go9 a b c d e n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) N (TinyL B0))                           = go10 a b c d e n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   N (TinyL B0))                           = go1 a
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         N (TinyL B0))                           = go6 a n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 N (TinyL B0))                           = go2 a b
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       N (TinyL B0))                           = go7 a b n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               N (TinyL B0))                           = go3 a b c
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     N (TinyL B0))                           = go8 a b c n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             N (TinyL B0))                           = go4 a b c d
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   N (TinyL B0))                           = go9 a b c d n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       N (TinyL (B1 (P s t))))                           = go2 s t
+fixup2' (BigR (F TRX B0 (B1 n))                     N (TinyL (B1 (P s t))))                           = go3 s t n
+fixup2' (BigR (F TRX B0 (B2 n o))                   N (TinyL (B1 (P s t))))                           = go4 s t n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 N (TinyL (B1 (P s t))))                           = go5 s t n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               N (TinyL (B1 (P s t))))                           = go6 s t n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             N (TinyL (B1 (P s t))))                           = go7 s t n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           N (TinyL (B1 (P s t))))                           = go7 a b c d e s t
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         N (TinyL (B1 (P s t))))                           = go8 a b c d e s t n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       N (TinyL (B1 (P s t))))                           = go9 a b c d e s t n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     N (TinyL (B1 (P s t))))                           = go10 a b c d e s t n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   N (TinyL (B1 (P s t))))                           = go11 a b c d e s t n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B1 (P s t))))                           = go12 a b c d e s t n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   N (TinyL (B1 (P s t))))                           = go3 a s t
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         N (TinyL (B1 (P s t))))                           = go8 a s t n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 N (TinyL (B1 (P s t))))                           = go4 a b s t
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       N (TinyL (B1 (P s t))))                           = go9 a b s t n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               N (TinyL (B1 (P s t))))                           = go5 a b c s t
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     N (TinyL (B1 (P s t))))                           = go10 a b c s t n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             N (TinyL (B1 (P s t))))                           = go6 a b c d s t
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   N (TinyL (B1 (P s t))))                           = go11 a b c d s t n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       N (TinyL (B2 (P s t) (P u v))))                   = go4 s t u v
+fixup2' (BigR (F TRX B0 (B1 n))                     N (TinyL (B2 (P s t) (P u v))))                   = go5 s t u v n
+fixup2' (BigR (F TRX B0 (B2 n o))                   N (TinyL (B2 (P s t) (P u v))))                   = go6 s t u v n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 N (TinyL (B2 (P s t) (P u v))))                   = go7 s t u v n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               N (TinyL (B2 (P s t) (P u v))))                   = go8 s t u v n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             N (TinyL (B2 (P s t) (P u v))))                   = go9 s t u v n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           N (TinyL (B2 (P s t) (P u v))))                   = go9 a b c d e s t u v
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         N (TinyL (B2 (P s t) (P u v))))                   = go10 a b c d e s t u v n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       N (TinyL (B2 (P s t) (P u v))))                   = go11 a b c d e s t u v n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     N (TinyL (B2 (P s t) (P u v))))                   = go12 a b c d e s t u v n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   N (TinyL (B2 (P s t) (P u v))))                   = go13 a b c d e s t u v n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B2 (P s t) (P u v))))                   = go14 a b c d e s t u v n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   N (TinyL (B2 (P s t) (P u v))))                   = go5 a s t u v
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         N (TinyL (B2 (P s t) (P u v))))                   = go10 a s t u v n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 N (TinyL (B2 (P s t) (P u v))))                   = go6 a b s t u v
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       N (TinyL (B2 (P s t) (P u v))))                   = go11 a b s t u v n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               N (TinyL (B2 (P s t) (P u v))))                   = go7 a b c s t u v
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     N (TinyL (B2 (P s t) (P u v))))                   = go12 a b c s t u v n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             N (TinyL (B2 (P s t) (P u v))))                   = go8 a b c d s t u v
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   N (TinyL (B2 (P s t) (P u v))))                   = go13 a b c d s t u v n o p q r
+fixup2' (BigR (F TRX B0 (B0))                       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go6 s t u v w x
+fixup2' (BigR (F TRX B0 (B1 n))                     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 s t u v w x n
+fixup2' (BigR (F TRX B0 (B2 n o))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 s t u v w x n o
+fixup2' (BigR (F TRX B0 (B3 n o p))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 s t u v w x n o p
+fixup2' (BigR (F TRX B0 (B4 n o p q))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 s t u v w x n o p q
+fixup2' (BigR (F TRX B0 (B5 n o p q r))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 s t u v w x n o p q r
+fixup2' (BigR (F TRX (B5 a b c d e) (B0))           N (TinyL (B3 (P s t) (P u v) (P w x))))           = go11 a b c d e s t u v w x
+fixup2' (BigR (F TRX (B5 a b c d e) (B1 n))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a b c d e s t u v w x n
+fixup2' (BigR (F TRX (B5 a b c d e) (B2 n o))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b c d e s t u v w x n o
+fixup2' (BigR (F TRX (B5 a b c d e) (B3 n o p))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c d e s t u v w x n o p
+fixup2' (BigR (F TRX (B5 a b c d e) (B4 n o p q))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d e s t u v w x n o p q
+fixup2' (BigR (F TRX (B5 a b c d e) (B5 n o p q r)) N (TinyL (B3 (P s t) (P u v) (P w x))))           = go16 a b c d e s t u v w x n o p q r
+fixup2' (BigR (F TXR (B1 a) (B0))                   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go7 a s t u v w x
+fixup2' (BigR (F TXR (B1 a) (B5 n o p q r))         N (TinyL (B3 (P s t) (P u v) (P w x))))           = go12 a s t u v w x n o p q r
+fixup2' (BigR (F TXR (B2 a b) (B0))                 N (TinyL (B3 (P s t) (P u v) (P w x))))           = go8 a b s t u v w x
+fixup2' (BigR (F TXR (B2 a b) (B5 n o p q r))       N (TinyL (B3 (P s t) (P u v) (P w x))))           = go13 a b s t u v w x n o p q r
+fixup2' (BigR (F TXR (B3 a b c) (B0))               N (TinyL (B3 (P s t) (P u v) (P w x))))           = go9 a b c s t u v w x
+fixup2' (BigR (F TXR (B3 a b c) (B5 n o p q r))     N (TinyL (B3 (P s t) (P u v) (P w x))))           = go14 a b c s t u v w x n o p q r
+fixup2' (BigR (F TXR (B4 a b c d) (B0))             N (TinyL (B3 (P s t) (P u v) (P w x))))           = go10 a b c d s t u v w x
+fixup2' (BigR (F TXR (B4 a b c d) (B5 n o p q r))   N (TinyL (B3 (P s t) (P u v) (P w x))))           = go15 a b c d s t u v w x n o p q r
 {-- INLINE fixup2' #-}
 
 go1 :: q a b -> Level F F T q a b
@@ -478,35 +512,35 @@ go2 a b                                              = TinyL (B2 a b)
 go3 :: q c d -> q b c -> q a b -> Level F F T q a d
 go3 a b c                                            = TinyL (B3 a b c)
 go4 :: q d e -> q c d -> q b c -> q a b -> Level F F T q a e
-go4 a b c d                                          = BigG (GG (B2 a b) (B2 c d)) N LEmpty
+go4 a b c d                                          = BigG (F TGG (B2 a b) (B2 c d)) N LEmpty
 go5 :: q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a f
-go5 a b c d e                                        = BigG (GG (B2 a b) (B3 c d e)) N LEmpty
+go5 a b c d e                                        = BigG (F TGG (B2 a b) (B3 c d e)) N LEmpty
 go6 :: q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a g
-go6 a b c d e f                                      = BigG (GG (B3 a b c) (B3 d e f)) N LEmpty
+go6 a b c d e f                                      = BigG (F TGG (B3 a b c) (B3 d e f)) N LEmpty
 go7 :: q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a h
-go7 a b c d e f g                                    = BigG (GG (B3 a b c) (B2 f g)) (Y1 (B1 (P d e))) LEmpty
+go7 a b c d e f g                                    = BigG (F TGG (B3 a b c) (B2 f g)) (Y1 (B1 (P d e))) LEmpty
 go8 :: q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a i
-go8 a b c d e f g h                                  = BigG (GG (B3 a b c) (B3 f g h)) (Y1 (B1 (P d e))) LEmpty
+go8 a b c d e f g h                                  = BigG (F TGG (B3 a b c) (B3 f g h)) (Y1 (B1 (P d e))) LEmpty
 go9 :: q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a j
-go9 a b c d e f g h i                                = BigG (GG (B3 a b c) (B2 h i)) (Y (YX (B1 (P d e)) (B1 (P f g))) N) LEmpty
+go9 a b c d e f g h i                                = BigG (F TGG (B3 a b c) (B2 h i)) (Y (F TYX (B1 (P d e)) (B1 (P f g))) N) LEmpty
 go10 :: q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a k
-go10 a b c d e f g h i j                             = BigG (GG (B3 a b c) (B3 h i j)) (Y (YX (B1 (P d e)) (B1 (P f g))) N) LEmpty
+go10 a b c d e f g h i j                             = BigG (F TGG (B3 a b c) (B3 h i j)) (Y (F TYX (B1 (P d e)) (B1 (P f g))) N) LEmpty
 go11 :: q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a l
-go11 a b c d e f g h i j k                           = BigG (GG (B3 a b c) (B2 j k)) (Y (YX (B1 (P d e)) (B2 (P f g) (P h i))) N) LEmpty
+go11 a b c d e f g h i j k                           = BigG (F TGG (B3 a b c) (B2 j k)) (Y (F TYX (B1 (P d e)) (B2 (P f g) (P h i))) N) LEmpty
 go12 :: q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a m
-go12 a b c d e f g h i j k l                         = BigG (GG (B3 a b c) (B3 j k l)) (Y (YX (B1 (P d e)) (B2 (P f g) (P h i))) N) LEmpty
+go12 a b c d e f g h i j k l                         = BigG (F TGG (B3 a b c) (B3 j k l)) (Y (F TYX (B1 (P d e)) (B2 (P f g) (P h i))) N) LEmpty
 go13 :: q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a n
-go13 a b c d e f g h i j k l m                       = BigG (GG (B3 a b c) (B2 l m)) (Y (YX (B1 (P d e)) (B3 (P f g) (P h i) (P j k))) N) LEmpty
+go13 a b c d e f g h i j k l m                       = BigG (F TGG (B3 a b c) (B2 l m)) (Y (F TYX (B1 (P d e)) (B3 (P f g) (P h i) (P j k))) N) LEmpty
 go14 :: q n o -> q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a o
-go14 a b c d e f g h i j k l m n                     = BigG (GG (B3 a b c) (B3 l m n)) (Y (YX (B1 (P d e)) (B3 (P f g) (P h i) (P j k))) N) LEmpty
+go14 a b c d e f g h i j k l m n                     = BigG (F TGG (B3 a b c) (B3 l m n)) (Y (F TYX (B1 (P d e)) (B3 (P f g) (P h i) (P j k))) N) LEmpty
 go15 :: q o p -> q n o -> q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a p
-go15 a b c d e f g h i j k l m n o                   = BigG (GG (B3 a b c) (B2 n o)) (Y (YX (B1 (P d e)) (B4 (P f g) (P h i) (P j k) (P l m))) N) LEmpty
+go15 a b c d e f g h i j k l m n o                   = BigG (F TGG (B3 a b c) (B2 n o)) (Y (F TYX (B1 (P d e)) (B4 (P f g) (P h i) (P j k) (P l m))) N) LEmpty
 go16 :: q p r -> q o p -> q n o -> q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a r
-go16 a b c d e f g h i j k l m n o p                 = BigG (GG (B3 a b c) (B3 n o p)) (Y (YX (B1 (P d e)) (B4 (P f g) (P h i) (P j k) (P l m))) N) LEmpty
+go16 a b c d e f g h i j k l m n o p                 = BigG (F TGG (B3 a b c) (B3 n o p)) (Y (F TYX (B1 (P d e)) (B4 (P f g) (P h i) (P j k) (P l m))) N) LEmpty
 go17 :: q r s -> q p r -> q o p -> q n o -> q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a s
-go17 a b c d e f g h i j k l m n o p q               = BigG (GG (B3 a b c) (B2 p q)) (Y (YX (B4 (P d e) (P f g) (P h i) (P j k)) (B2 (P l m) (P n o))) N) LEmpty
+go17 a b c d e f g h i j k l m n o p q               = BigG (F TGG (B3 a b c) (B2 p q)) (Y (F TYX (B4 (P d e) (P f g) (P h i) (P j k)) (B2 (P l m) (P n o))) N) LEmpty
 go18 :: q s t -> q r s -> q p r -> q o p -> q n o -> q m n -> q l m -> q k l -> q j k -> q i j -> q h i -> q g h -> q f g -> q e f -> q d e -> q c d -> q b c -> q a b -> Level F F T q a t
-go18 a b c d e f g h i j k l m n o p q r             = BigG (GG (B3 a b c) (B3 p q r)) (Y (YX (B4 (P d e) (P f g) (P h i) (P j k)) (B2 (P l m) (P n o))) N) LEmpty
+go18 a b c d e f g h i j k l m n o p q r             = BigG (F TGG (B3 a b c) (B3 p q r)) (Y (F TYX (B4 (P d e) (P f g) (P h i) (P j k)) (B2 (P l m) (P n o))) N) LEmpty
 {-
 go19 a b c d e f g h i j k l m n o p q r s           = BigG (GG (B3 a b c) (B2 r s)) (Y (YX (B4 (P d e) (P f g) (P h i) (P j k)) (B3 (P l m) (P n o) (P p q))) N) LEmpty
 go20 a b c d e f g h i j k l m n o p q r s t         = BigG (GG (B3 a b c) (B3 r s t)) (Y (YX (B4 (P d e) (P f g) (P h i) (P j k)) (B3 (P l m) (P n o) (P p q))) N) LEmpty
@@ -552,19 +586,19 @@ instance Cons Deque where
   a <| (Deque (TinyL (B2 b c)))                          = Deque $ TinyL (B3 a b c)
   a <| (Deque (TinyL (B3 b c d)))                        = Deque $ TinyH (B4 a b c d)
   a <| (Deque (TinyH (B4 b c d e)))                      = fixup N (TinyH (B5 a b c d e))
-  a <| (Deque (BigY (YX (B1 b) (B1 i)) y z))             = Deque $ BigY (GY (B2 a b) (B1 i)) y z
-  a <| (Deque (BigY (YX (B1 b) (B2 i j)) y z))           = Deque $ BigG (GG (B2 a b) (B2 i j)) y z
-  a <| (Deque (BigY (YX (B1 b) (B3 i j k)) y z))         = Deque $ BigG (GG (B2 a b) (B3 i j k)) y z
-  a <| (Deque (BigY (YX (B1 b) (B4 i j k l)) y z))       = Deque $ BigY (GY (B2 a b) (B4 i j k l)) y z
-  a <| (Deque (BigY (GY (B2 b c) x) y z))                = Deque $ BigY (GY (B3 a b c) x) y z
-  a <| (Deque (BigG (GG (B2 b c) x) y z))                = Deque $ BigG (GG (B3 a b c) x) y z
-  a <| (Deque (BigY (GY (B3 b c d) x) y z))              = Deque $ BigY (YX (B4 a b c d) x) y z
-  a <| (Deque (BigG (GG (B3 b c d) x) y LEmpty))         = Deque $ BigY (YX (B4 a b c d) x) y LEmpty
-  a <| (Deque (BigG (GG (B3 b c d) x) y z@(TinyH B5{}))) = Deque $ BigY (YX (B4 a b c d) x) y (fixup' z)
-  a <| (Deque (BigG (GG (B3 b c d) x) y z@(TinyL{})))    = Deque $ BigY (YX (B4 a b c d) x) y z
-  a <| (Deque (BigG (GG (B3 b c d) x) y z@(BigR{})))     = Deque $ BigY (YX (B4 a b c d) x) y (fixup' z)
-  a <| (Deque (BigG (GG (B3 b c d) x) y z@(BigG{})))     = Deque $ BigY (YX (B4 a b c d) x) y z
-  a <| (Deque (BigY (YX (B4 b c d e) x) y z))            = fixup N (BigR (RX (B5 a b c d e) x) y z)
+  a <| (Deque (BigY (F _ (B1 b) (B1 i)) y z))             = Deque $ BigY (F TGY (B2 a b) (B1 i)) y z
+  a <| (Deque (BigY (F _ (B1 b) (B2 i j)) y z))           = Deque $ BigG (F TGG (B2 a b) (B2 i j)) y z
+  a <| (Deque (BigY (F _ (B1 b) (B3 i j k)) y z))         = Deque $ BigG (F TGG (B2 a b) (B3 i j k)) y z
+  a <| (Deque (BigY (F _ (B1 b) (B4 i j k l)) y z))       = Deque $ BigY (F TGY (B2 a b) (B4 i j k l)) y z
+  a <| (Deque (BigY (F TGY (B2 b c) x) y z))                = Deque $ BigY (F TGY (B3 a b c) x) y z
+  a <| (Deque (BigG (F TGG (B2 b c) x) y z))                = Deque $ BigG (F TGG (B3 a b c) x) y z
+  a <| (Deque (BigY (F TGY (B3 b c d) x) y z))              = Deque $ BigY (F TYX (B4 a b c d) x) y z
+  a <| (Deque (BigG (F TGG (B3 b c d) x) y LEmpty))         = Deque $ BigY (F TYX (B4 a b c d) x) y LEmpty
+  a <| (Deque (BigG (F TGG (B3 b c d) x) y z@(TinyH B5{}))) = Deque $ BigY (F TYX (B4 a b c d) x) y (fixup' z)
+  a <| (Deque (BigG (F TGG (B3 b c d) x) y z@(TinyL{})))    = Deque $ BigY (F TYX (B4 a b c d) x) y z
+  a <| (Deque (BigG (F TGG (B3 b c d) x) y z@(BigR{})))     = Deque $ BigY (F TYX (B4 a b c d) x) y (fixup' z)
+  a <| (Deque (BigG (F TGG (B3 b c d) x) y z@(BigG{})))     = Deque $ BigY (F TYX (B4 a b c d) x) y z
+  a <| (Deque (BigY (F TYX (B4 b c d e) x) y z))            = fixup N (BigR (F TRX (B5 a b c d e) x) y z)
 
 instance Unsnoc Deque where
   unsnoc (Deque LEmpty)                                  = Empty
@@ -573,18 +607,18 @@ instance Unsnoc Deque where
   unsnoc (Deque (TinyL (B2 b c)))                        = Deque (TinyL (B1 b)) :| c
   unsnoc (Deque (TinyL (B3 b c d)))                      = Deque (TinyL (B2 b c)) :| d
   unsnoc (Deque (TinyH (B4 b c d e)))                    = Deque (TinyL (B3 b c d)) :| e
-  unsnoc (Deque (BigY (YX b (B1 i)) y z))                = fixup N (BigR (XR b (B0)) y z) :| i
-  unsnoc (Deque (BigY (YX b (B2 i j)) y z))              = Deque (BigY (YX b (B1 i)) y z) :| j
-  unsnoc (Deque (BigY (YX b (B3 i j k)) y z))            = Deque (BigY (YX b (B2 i j)) y z) :| k
-  unsnoc (Deque (BigY (YX b (B4 i j k l)) y z))          = Deque (BigY (YX b (B3 i j k)) y z) :| l
-  unsnoc (Deque (BigY (GY b (B1 i)) y z))                = fixup N (BigR (XR b B0) y z) :| i
-  unsnoc (Deque (BigY (GY b (B4 i j k l)) y z))          = Deque (BigG (GG b (B3 i j k)) y z) :| l
-  unsnoc (Deque (BigG (GG b (B2 i j)) y LEmpty))         = Deque (BigY (GY b (B1 i)) y LEmpty) :| j
-  unsnoc (Deque (BigG (GG b (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (GY b (B1 i)) y (fixup' z)) :| j
-  unsnoc (Deque (BigG (GG b (B2 i j)) y z@(TinyL{})))    = Deque (BigY (GY b (B1 i)) y z) :| j
-  unsnoc (Deque (BigG (GG b (B2 i j)) y z@(BigR{})))     = Deque (BigY (GY b (B1 i)) y (fixup' z)) :| j
-  unsnoc (Deque (BigG (GG b (B2 i j)) y z@(BigG{})))     = Deque (BigY (GY b (B1 i)) y z) :| j
-  unsnoc (Deque (BigG (GG b (B3 i j k)) y z))            = Deque (BigG (GG b (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (F TYX b (B1 i)) y z))                = fixup N (BigR (F TXR b (B0)) y z) :| i
+  unsnoc (Deque (BigY (F TYX b (B2 i j)) y z))              = Deque (BigY (F TYX b (B1 i)) y z) :| j
+  unsnoc (Deque (BigY (F TYX b (B3 i j k)) y z))            = Deque (BigY (F TYX b (B2 i j)) y z) :| k
+  unsnoc (Deque (BigY (F TYX b (B4 i j k l)) y z))          = Deque (BigY (F TYX b (B3 i j k)) y z) :| l
+  unsnoc (Deque (BigY (F TGY b (B1 i)) y z))                = fixup N (BigR (F TXR b B0) y z) :| i
+  unsnoc (Deque (BigY (F TGY b (B4 i j k l)) y z))          = Deque (BigG (F TGG b (B3 i j k)) y z) :| l
+  unsnoc (Deque (BigG (F TGG b (B2 i j)) y LEmpty))         = Deque (BigY (F TGY b (B1 i)) y LEmpty) :| j
+  unsnoc (Deque (BigG (F TGG b (B2 i j)) y z@(TinyH B5{}))) = Deque (BigY (F TGY b (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (F TGG b (B2 i j)) y z@(TinyL{})))    = Deque (BigY (F TGY b (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (F TGG b (B2 i j)) y z@(BigR{})))     = Deque (BigY (F TGY b (B1 i)) y (fixup' z)) :| j
+  unsnoc (Deque (BigG (F TGG b (B2 i j)) y z@(BigG{})))     = Deque (BigY (F TGY b (B1 i)) y z) :| j
+  unsnoc (Deque (BigG (F TGG b (B3 i j k)) y z))            = Deque (BigG (F TGG b (B2 i j)) y z) :| k
 
 instance Uncons Deque where
   uncons (Deque LEmpty)                                    = Empty
@@ -593,20 +627,20 @@ instance Uncons Deque where
   uncons (Deque (TinyL (B2 b c)))                          = b :| Deque (TinyL (B1 c))
   uncons (Deque (TinyL (B3 b c d)))                        = b :| Deque (TinyL (B2 c d))
   uncons (Deque (TinyH (B4 b c d e)))                      = b :| Deque (TinyL (B3 c d e))
-  uncons (Deque (BigY (YX (B1 b) i) y z))                  = b :| fixup N (BigR (RX B0 i) y z)
-  uncons (Deque (BigY (GY (B2 b c) (B1 i)) y z))           = b :| Deque (BigY (YX (B1 c) (B1 i)) y z)
-  uncons (Deque (BigY (GY (B2 b c) (B4 i j k l)) y z))     = b :| Deque (BigY (YX (B1 c) (B4 i j k l)) y z)
-  uncons (Deque (BigG (GG (B2 b c) i) y LEmpty))           = b :| Deque (BigY (YX (B1 c) i) y LEmpty)
-  uncons (Deque (BigG (GG (B2 b c) i) y z@(TinyH B5{})))   = b :| Deque (BigY (YX (B1 c) i) y (fixup' z))
-  uncons (Deque (BigG (GG (B2 b c) i) y z@(TinyL{})))      = b :| Deque (BigY (YX (B1 c) i) y z)
-  uncons (Deque (BigG (GG (B2 b c) i) y z@(BigR{})))       = b :| Deque (BigY (YX (B1 c) i) y (fixup' z))
-  uncons (Deque (BigG (GG (B2 b c) i) y z@(BigG{})))       = b :| Deque (BigY (YX (B1 c) i) y z)
-  uncons (Deque (BigY (GY (B3 b c d) i) y z))              = b :| Deque (BigY (GY (B2 c d) i) y z)
-  uncons (Deque (BigG (GG (B3 b c d) i) y z))              = b :| Deque (BigG (GG (B2 c d) i) y z)
-  uncons (Deque (BigY (YX (B4 b c d e) (B1 i)) y z))       = b :| Deque (BigY (GY (B3 c d e) (B1 i)) y z)
-  uncons (Deque (BigY (YX (B4 b c d e) (B2 i j)) y z))     = b :| Deque (BigG (GG (B3 c d e) (B2 i j)) y z)
-  uncons (Deque (BigY (YX (B4 b c d e) (B3 i j k)) y z))   = b :| Deque (BigG (GG (B3 c d e) (B3 i j k)) y z)
-  uncons (Deque (BigY (YX (B4 b c d e) (B4 i j k l)) y z)) = b :| Deque (BigY (GY (B3 c d e) (B4 i j k l)) y z)
+  uncons (Deque (BigY (F TYX (B1 b) i) y z))                  = b :| fixup N (BigR (F TRX B0 i) y z)
+  uncons (Deque (BigY (F TGY (B2 b c) (B1 i)) y z))           = b :| Deque (BigY (F TYX (B1 c) (B1 i)) y z)
+  uncons (Deque (BigY (F TGY (B2 b c) (B4 i j k l)) y z))     = b :| Deque (BigY (F TYX (B1 c) (B4 i j k l)) y z)
+  uncons (Deque (BigG (F TGG (B2 b c) i) y LEmpty))           = b :| Deque (BigY (F TYX (B1 c) i) y LEmpty)
+  uncons (Deque (BigG (F TGG (B2 b c) i) y z@(TinyH B5{})))   = b :| Deque (BigY (F TYX (B1 c) i) y (fixup' z))
+  uncons (Deque (BigG (F TGG (B2 b c) i) y z@(TinyL{})))      = b :| Deque (BigY (F TYX (B1 c) i) y z)
+  uncons (Deque (BigG (F TGG (B2 b c) i) y z@(BigR{})))       = b :| Deque (BigY (F TYX (B1 c) i) y (fixup' z))
+  uncons (Deque (BigG (F TGG (B2 b c) i) y z@(BigG{})))       = b :| Deque (BigY (F TYX (B1 c) i) y z)
+  uncons (Deque (BigY (F TGY (B3 b c d) i) y z))              = b :| Deque (BigY (F TGY (B2 c d) i) y z)
+  uncons (Deque (BigG (F TGG (B3 b c d) i) y z))              = b :| Deque (BigG (F TGG (B2 c d) i) y z)
+  uncons (Deque (BigY (F TYX (B4 b c d e) (B1 i)) y z))       = b :| Deque (BigY (F TGY (B3 c d e) (B1 i)) y z)
+  uncons (Deque (BigY (F TYX (B4 b c d e) (B2 i j)) y z))     = b :| Deque (BigG (F TGG (B3 c d e) (B2 i j)) y z)
+  uncons (Deque (BigY (F TYX (B4 b c d e) (B3 i j k)) y z))   = b :| Deque (BigG (F TGG (B3 c d e) (B3 i j k)) y z)
+  uncons (Deque (BigY (F TYX (B4 b c d e) (B4 i j k l)) y z)) = b :| Deque (BigY (F TGY (B3 c d e) (B4 i j k l)) y z)
 
 instance Snoc Deque where
   (Deque LEmpty)                                    |> a = Deque $ TinyL (B1 a)
@@ -615,15 +649,15 @@ instance Snoc Deque where
   (Deque (TinyL (B2 b c)))                          |> a = Deque $ TinyL (B3 b c a)
   (Deque (TinyL (B3 b c d)))                        |> a = Deque $ TinyH (B4 b c d a)
   (Deque (TinyH (B4 b c d e)))                      |> a = fixup N (TinyH (B5 b c d e a))
-  (Deque (BigY (YX b (B1 i)) y z))                  |> a = Deque $ BigY (YX b (B2 i a)) y z
-  (Deque (BigY (YX b (B2 i j)) y z))                |> a = Deque $ BigY (YX b (B3 i j a)) y z
-  (Deque (BigY (YX b (B3 i j k)) y z))              |> a = Deque $ BigY (YX b (B4 i j k a)) y z
-  (Deque (BigY (YX b (B4 i j k l)) y z))            |> a = fixup N (BigR (XR b (B5 i j k l a)) y z)
-  (Deque (BigY (GY b (B1 i)) y z))                  |> a = Deque $ BigG (GG b (B2 i a)) y z
-  (Deque (BigY (GY b (B4 i j k l)) y z))            |> a = fixup N (BigR (XR b (B5 i j k l a)) y z)
-  (Deque (BigG (GG b (B2 i j)) y z))                |> a = Deque $ BigG (GG b (B3 i j a)) y z
-  (Deque (BigG (GG b (B3 i j k)) y z@LEmpty))       |> a = Deque $ BigY (GY b (B4 i j k a)) y z
-  (Deque (BigG (GG b (B3 i j k)) y z@(TinyH B5{}))) |> a = Deque $ BigY (GY b (B4 i j k a)) y (fixup' z)
-  (Deque (BigG (GG b (B3 i j k)) y z@TinyL{}))      |> a = Deque $ BigY (GY b (B4 i j k a)) y z
-  (Deque (BigG (GG b (B3 i j k)) y z@BigR{}))       |> a = Deque $ BigY (GY b (B4 i j k a)) y (fixup' z)
-  (Deque (BigG (GG b (B3 i j k)) y z@BigG{}))       |> a = Deque $ BigY (GY b (B4 i j k a)) y z
+  (Deque (BigY (F TYX b (B1 i)) y z))                  |> a = Deque $ BigY (F TYX b (B2 i a)) y z
+  (Deque (BigY (F TYX b (B2 i j)) y z))                |> a = Deque $ BigY (F TYX b (B3 i j a)) y z
+  (Deque (BigY (F TYX b (B3 i j k)) y z))              |> a = Deque $ BigY (F TYX b (B4 i j k a)) y z
+  (Deque (BigY (F TYX b (B4 i j k l)) y z))            |> a = fixup N (BigR (F TXR b (B5 i j k l a)) y z)
+  (Deque (BigY (F TGY b (B1 i)) y z))                  |> a = Deque $ BigG (F TGG b (B2 i a)) y z
+  (Deque (BigY (F TGY b (B4 i j k l)) y z))            |> a = fixup N (BigR (F TXR b (B5 i j k l a)) y z)
+  (Deque (BigG (F TGG b (B2 i j)) y z))                |> a = Deque $ BigG (F TGG b (B3 i j a)) y z
+  (Deque (BigG (F TGG b (B3 i j k)) y z@LEmpty))       |> a = Deque $ BigY (F TGY b (B4 i j k a)) y z
+  (Deque (BigG (F TGG b (B3 i j k)) y z@(TinyH B5{}))) |> a = Deque $ BigY (F TGY b (B4 i j k a)) y (fixup' z)
+  (Deque (BigG (F TGG b (B3 i j k)) y z@TinyL{}))      |> a = Deque $ BigY (F TGY b (B4 i j k a)) y z
+  (Deque (BigG (F TGG b (B3 i j k)) y z@BigR{}))       |> a = Deque $ BigY (F TGY b (B4 i j k a)) y (fixup' z)
+  (Deque (BigG (F TGG b (B3 i j k)) y z@BigG{}))       |> a = Deque $ BigY (F TGY b (B4 i j k a)) y z
